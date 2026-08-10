@@ -792,85 +792,127 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ onPlanGenerated })
 
       {/* STEP 3: METHODOLOGIES & EQUIPMENTS */}
       {currentStep === 3 && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-7 animate-fadeIn">
           <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <Puzzle className="w-5 h-5 text-amber-600" />
             3. Phương Pháp, Kỹ Thuật Dạy Học &amp; Thiết Bị
           </h2>
 
           {/* Phương pháp dạy học */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              Phương Pháp Dạy Học Chủ Đạo
-            </label>
-            <div className="flex flex-wrap gap-2">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wide flex items-center gap-1.5">
+                <Puzzle className="w-4 h-4 text-amber-600" />
+                Phương Pháp Dạy Học Chủ Đạo
+              </label>
+              <span className="text-[11px] text-stone-500 font-medium">
+                Đã chọn: <strong className="text-amber-700 dark:text-amber-400">{selectedMethods.length}</strong> phương pháp
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
               {TEACHING_METHODS_PRESETS.map((m) => {
                 const isSelected = selectedMethods.includes(m);
                 return (
-                  <button
+                  <div
                     key={m}
-                    type="button"
                     onClick={() => toggleArrayItem(selectedMethods, setSelectedMethods, m)}
-                    className={`px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                    className={`flex items-center gap-2.5 p-3 rounded-2xl border cursor-pointer transition-all select-none ${
                       isSelected
-                        ? 'border-amber-600 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
-                        : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-400'
+                        ? 'bg-amber-50/90 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700 ring-1 ring-amber-300 shadow-xs'
+                        : 'bg-[#FAF8F5] dark:bg-stone-800/60 border-stone-200 dark:border-stone-700 hover:border-amber-300'
                     }`}
                   >
-                    {m}
-                  </button>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      readOnly
+                      className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-stone-300 dark:border-stone-600 shrink-0 pointer-events-none"
+                    />
+                    <span className="text-xs font-semibold text-stone-800 dark:text-stone-200 leading-snug">
+                      {m}
+                    </span>
+                  </div>
                 );
               })}
             </div>
           </div>
 
           {/* Kỹ thuật dạy học */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              Kỹ Thuật Dạy Học Tích Cực
-            </label>
-            <div className="flex flex-wrap gap-2">
+          <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-indigo-900 dark:text-indigo-300 uppercase tracking-wide flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-indigo-600" />
+                Kỹ Thuật Dạy Học Tích Cực
+              </label>
+              <span className="text-[11px] text-stone-500 font-medium">
+                Đã chọn: <strong className="text-indigo-700 dark:text-indigo-400">{selectedTechniques.length}</strong> kỹ thuật
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
               {TEACHING_TECHNIQUES_PRESETS.map((t) => {
                 const isSelected = selectedTechniques.includes(t);
                 return (
-                  <button
+                  <div
                     key={t}
-                    type="button"
                     onClick={() => toggleArrayItem(selectedTechniques, setSelectedTechniques, t)}
-                    className={`px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                    className={`flex items-center gap-2.5 p-3 rounded-2xl border cursor-pointer transition-all select-none ${
                       isSelected
-                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300'
-                        : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-400'
+                        ? 'bg-indigo-50/90 dark:bg-indigo-950/50 border-indigo-300 dark:border-indigo-700 ring-1 ring-indigo-300 shadow-xs'
+                        : 'bg-[#FAF8F5] dark:bg-stone-800/60 border-stone-200 dark:border-stone-700 hover:border-indigo-300'
                     }`}
                   >
-                    {t}
-                  </button>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      readOnly
+                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-stone-300 dark:border-stone-600 shrink-0 pointer-events-none"
+                    />
+                    <span className="text-xs font-semibold text-stone-800 dark:text-stone-200 leading-snug">
+                      {t}
+                    </span>
+                  </div>
                 );
               })}
             </div>
           </div>
 
           {/* Thiết bị dạy học */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              Thiết Bị Dạy Học &amp; Học Liệu
-            </label>
-            <div className="flex flex-wrap gap-2">
+          <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-sky-900 dark:text-sky-300 uppercase tracking-wide flex items-center gap-1.5">
+                <Tv className="w-4 h-4 text-sky-600" />
+                Thiết Bị Dạy Học &amp; Học Liệu Số
+              </label>
+              <span className="text-[11px] text-stone-500 font-medium">
+                Đã chọn: <strong className="text-sky-700 dark:text-sky-400">{selectedEquipments.length}</strong> thiết bị
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
               {EQUIPMENTS_PRESETS.map((eq) => {
                 const isSelected = selectedEquipments.includes(eq);
                 return (
-                  <button
+                  <div
                     key={eq}
-                    type="button"
                     onClick={() => toggleArrayItem(selectedEquipments, setSelectedEquipments, eq)}
-                    className={`px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                    className={`flex items-center gap-2.5 p-3 rounded-2xl border cursor-pointer transition-all select-none ${
                       isSelected
-                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300'
-                        : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-400'
+                        ? 'bg-sky-50/90 dark:bg-sky-950/50 border-sky-300 dark:border-sky-700 ring-1 ring-sky-300 shadow-xs'
+                        : 'bg-[#FAF8F5] dark:bg-stone-800/60 border-stone-200 dark:border-stone-700 hover:border-sky-300'
                     }`}
                   >
-                    {eq}
-                  </button>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      readOnly
+                      className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 border-stone-300 dark:border-stone-600 shrink-0 pointer-events-none"
+                    />
+                    <span className="text-xs font-semibold text-stone-800 dark:text-stone-200 leading-snug">
+                      {eq}
+                    </span>
+                  </div>
                 );
               })}
             </div>
