@@ -43,6 +43,8 @@ import {
   ORGANIZATION_FORMS_PRESETS,
   EQUIPMENTS_PRESETS,
   INTEGRATED_TOPICS_PRESETS,
+  INTEGRATED_TOPICS_DETAILED,
+  SAMPLE_PLAN_EDIT_MODES,
 } from '../data/presets';
 import { getApiKeyHeaders } from '../utils/apiHelper';
 
@@ -178,13 +180,38 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ onPlanGenerated })
 
   // Integrated Topics State
   const [selectedIntegrations, setSelectedIntegrations] = useState<string[]>([
-    'Chuyển đổi số & Kỹ năng số',
-    'Giáo dục STEM / STEAM',
+    'Giáo dục tài chính',
+    'Giáo dục STEM',
+    'Đánh giá năng lực',
+    'Đánh giá phẩm chất',
+    'Năng lực số',
+    'Chuyển đổi số',
   ]);
 
+  // Sample Lesson Plan Editing / Integration State
+  const [sampleFileName, setSampleFileName] = useState<string>('');
+  const [sampleFileBase64, setSampleFileBase64] = useState<string>('');
+  const [sampleMimeType, setSampleMimeType] = useState<string>('');
+  const [sampleEditMode, setSampleEditMode] = useState<string>('mode_full');
+
   const [customNote, setCustomNote] = useState<string>(
-    'Thiết kế bài dạy sinh động, thêm hoạt động trò chơi ghép thẻ ở phần khởi động.'
+    'Thiết kế bài dạy sinh động, giữ cấu trúc bài dạy gốc, lồng ghép thêm học liệu số và hoạt động trải nghiệm.'
   );
+
+  const handleSampleDocxUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setSampleFileName(file.name);
+    setSampleMimeType(file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      setSampleFileBase64(result);
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Level & Grade change handler
   const handleLevelChange = (newLevel: EducationLevel) => {
@@ -248,6 +275,10 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ onPlanGenerated })
           materials: ['SGK', 'Phiếu học tập'],
           integratedTopics: selectedIntegrations,
           customNote,
+          sampleFileBase64,
+          sampleMimeType,
+          sampleFileName,
+          sampleEditMode,
         }),
       });
 
@@ -847,42 +878,177 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ onPlanGenerated })
         </div>
       )}
 
-      {/* STEP 4: INTEGRATIONS & DIFFERENTIATION */}
+      {/* STEP 4: INTEGRATIONS & SAMPLE PLAN EDITING */}
       {currentStep === 4 && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6 animate-fadeIn">
           <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <Layers className="w-5 h-5 text-emerald-600" />
-            4. Tích Hợp Nội Dung Liên Môn &amp; Phân Hóa Học Sinh
+            4. Tích Hợp Nội Dung Liên Môn &amp; Chỉnh Sửa Giáo Án Mẫu (.docx)
           </h2>
 
-          {/* Tích hợp nội dung */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              Nội Dung Tích Hợp Lồng Ghép
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {INTEGRATED_TOPICS_PRESETS.map((it) => {
-                const isSelected = selectedIntegrations.includes(it);
+          {/* KHU VỰC 3: NỘI DUNG TÍCH HỢP */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wide flex items-center gap-1.5">
+                <CheckSquare className="w-4 h-4 text-amber-600" />
+                Khu Vực 3: Nội Dung Tích Hợp &amp; Tiêu Chí Bổ Sung
+              </h3>
+              <span className="text-[11px] text-stone-500 font-medium">
+                Tích chọn các nội dung muốn AI tích hợp
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {INTEGRATED_TOPICS_DETAILED.map((item) => {
+                const isSelected = selectedIntegrations.includes(item.name);
                 return (
-                  <button
-                    key={it}
-                    type="button"
-                    onClick={() => toggleArrayItem(selectedIntegrations, setSelectedIntegrations, it)}
-                    className={`px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                  <div
+                    key={item.id}
+                    onClick={() => toggleArrayItem(selectedIntegrations, setSelectedIntegrations, item.name)}
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
                       isSelected
-                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
-                        : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-400'
+                        ? 'bg-amber-50/90 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700 shadow-xs ring-1 ring-amber-300'
+                        : 'bg-[#FAF8F5] dark:bg-stone-800/60 border-stone-200 dark:border-stone-700 hover:border-amber-300'
                     }`}
                   >
-                    {it}
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      readOnly
+                      className="mt-0.5 w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-stone-300 dark:border-stone-600 pointer-events-none"
+                    />
+                    <div>
+                      <div className="text-xs font-bold text-stone-900 dark:text-stone-100">
+                        {item.name}
+                      </div>
+                      <div className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
+                        {item.desc}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* KHU VỰC 4: CHẾ ĐỘ CHỈNH SỬA / BỔ SUNG VÀO GIÁO ÁN MẪU */}
+          <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <h3 className="text-xs font-bold text-indigo-900 dark:text-indigo-300 uppercase tracking-wide flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-indigo-600" />
+              Khu Vực 4: Chế Độ Chỉnh Sửa / Bổ Sung Vào Giáo Án Mẫu (Upload file .docx)
+            </h3>
+
+            {/* Upload box for sample plan .docx */}
+            <div className="bg-slate-50 dark:bg-slate-800/60 border-2 border-dashed border-indigo-200 dark:border-indigo-900/60 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Upload className="w-4 h-4 text-indigo-600" />
+                  {sampleFileName ? `Tài liệu đã chọn: ${sampleFileName}` : 'Tải lên File Giáo án mẫu đính kèm (.docx, .pdf, .txt)'}
+                </span>
+                {sampleFileName && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSampleFileName('');
+                      setSampleFileBase64('');
+                      setSampleMimeType('');
+                    }}
+                    className="text-[11px] text-rose-600 hover:underline font-semibold"
+                  >
+                    Xóa file
                   </button>
+                )}
+              </div>
+
+              <label className="flex items-center justify-center gap-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 hover:border-indigo-500 p-3.5 rounded-xl cursor-pointer text-xs font-semibold text-indigo-700 dark:text-indigo-300 shadow-xs transition-all">
+                <FileText className="w-4 h-4 text-indigo-600" />
+                <span>
+                  {sampleFileName
+                    ? `📄 ${sampleFileName} (Bấm để chọn file khác)`
+                    : 'Bấm để chọn hoặc thả file Giáo án mẫu .docx / .pdf / .txt vào đây'}
+                </span>
+                <input
+                  type="file"
+                  accept=".docx,.doc,.pdf,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
+                  onChange={handleSampleDocxUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* Radio Cards for Sample Edit Modes */}
+            <div className="space-y-2.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Lựa chọn Chế độ Bổ sung / Tích hợp AI vào Giáo án mẫu:
+              </label>
+
+              {/* Option: Generate from scratch */}
+              <div
+                onClick={() => setSampleEditMode('none')}
+                className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                  sampleEditMode === 'none'
+                    ? 'bg-slate-100 dark:bg-slate-800 border-slate-400 dark:border-slate-600 ring-1 ring-slate-400'
+                    : 'bg-[#FAF8F5] dark:bg-stone-800/40 border-stone-200 dark:border-stone-700 hover:border-slate-300'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="sampleEditMode"
+                  checked={sampleEditMode === 'none'}
+                  onChange={() => setSampleEditMode('none')}
+                  className="mt-1 text-slate-600 focus:ring-slate-500"
+                />
+                <div>
+                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Soạn mới hoàn toàn theo chuẩn GDPT 2018 (Không dùng sườn giáo án mẫu)
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    AI Gemini 3.6 sẽ tự khởi tạo bài dạy mới từ đầu dựa trên thông tin môn học và mục tiêu đã khai báo.
+                  </div>
+                </div>
+              </div>
+
+              {SAMPLE_PLAN_EDIT_MODES.map((mode) => {
+                const isSelected = sampleEditMode === mode.id;
+                return (
+                  <div
+                    key={mode.id}
+                    onClick={() => setSampleEditMode(mode.id)}
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                      isSelected
+                        ? 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 shadow-xs ring-1 ring-amber-300'
+                        : 'bg-[#FAF8F5] dark:bg-stone-800/40 border-stone-200 dark:border-stone-700 hover:border-amber-200'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="sampleEditMode"
+                      checked={isSelected}
+                      onChange={() => setSampleEditMode(mode.id)}
+                      className="mt-1 text-amber-600 focus:ring-amber-500"
+                    />
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2.5 h-2.5 rounded-full ${mode.badgeColor}`} />
+                        <span className="text-xs font-bold text-stone-900 dark:text-stone-100">
+                          {mode.title}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-stone-600 dark:text-stone-300">
+                        {mode.desc}
+                      </div>
+                      <div className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold italic">
+                        {mode.reqNote}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </div>
           </div>
 
           {/* Ghi chú thêm */}
-          <div>
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Yêu Cầu / Ý Tưởng Sư Phạm Cụ Thể Luyện AI
             </label>
