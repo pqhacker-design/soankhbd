@@ -165,6 +165,64 @@ export const INTEGRATED_TOPICS_PRESETS = [
   'Giáo dục công dân số',
 ];
 
+export const INTEGRATED_TOPICS_DETAILED = [
+  { id: 'fin_edu', name: 'Giáo dục tài chính', desc: 'Quản lý ngân sách, mua sắm' },
+  { id: 'stem_edu', name: 'Giáo dục STEM', desc: 'Tư duy thiết kế chế tạo' },
+  { id: 'competency_eval', name: 'Đánh giá năng lực', desc: 'Mục tiêu định lượng kỹ năng' },
+  { id: 'quality_eval', name: 'Đánh giá phẩm chất', desc: 'Theo dõi sự chăm chỉ, trách nhiệm' },
+  { id: 'differentiated_teaching', name: 'Dạy học phân hóa', desc: 'Giao nhiệm vụ riêng biệt nâng cao' },
+  { id: 'digital_competency', name: 'Năng lực số', desc: 'Bồi dưỡng 24 kỹ năng số' },
+  { id: 'digital_trans', name: 'Chuyển đổi số', desc: 'Thiết bị số, TV thông minh, QR' },
+  { id: 'local_edu', name: 'Giáo dục địa phương', desc: 'Liên kết di sản văn hóa vùng miền' },
+  { id: 'defense_edu', name: 'Giáo dục quốc phòng và an ninh', desc: 'Lồng ghép quốc phòng, an ninh bản...' },
+];
+
+export interface SamplePlanEditModeOption {
+  id: string;
+  title: string;
+  desc: string;
+  reqNote: string;
+  badgeColor: string;
+}
+
+export const SAMPLE_PLAN_EDIT_MODES: SamplePlanEditModeOption[] = [
+  {
+    id: 'mode_full',
+    title: 'Tích hợp toàn diện vào giáo án mẫu',
+    desc: 'Phân tích tài liệu Word tải lên ở Khu vực 4, giữ cấu trúc gốc và bổ sung đầy đủ các mục đã chọn ở Khu vực 3 - Nội dung tích hợp.',
+    reqNote: '(Yêu cầu phải tải lên file giáo án mẫu .docx ở Khu vực 4)',
+    badgeColor: 'bg-indigo-500',
+  },
+  {
+    id: 'mode_ai',
+    title: 'Chỉ bổ sung yếu tố trí tuệ nhân tạo (AI)',
+    desc: 'Giữ nguyên sườn giáo án đính kèm, lồng ghép thêm học liệu số và các nhiệm vụ ứng dụng AI thông minh.',
+    reqNote: '(Yêu cầu phải tải lên file giáo án mẫu .docx ở Khu vực 4)',
+    badgeColor: 'bg-purple-500',
+  },
+  {
+    id: 'mode_stem',
+    title: 'Chỉ bổ sung tích hợp Giáo dục STEM',
+    desc: 'Thiết kế bổ sung các hoạt động STEM trải nghiệm gắn với bài học có sẵn trong tài liệu.',
+    reqNote: '(Yêu cầu phải tải lên file giáo án mẫu .docx ở Khu vực 4)',
+    badgeColor: 'bg-amber-500',
+  },
+  {
+    id: 'mode_digital_competency',
+    title: 'Chỉ bổ sung tích hợp Năng lực số',
+    desc: 'Ghép nối các mục tiêu rèn luyện năng lực số được chỉ định vào các bước bài học gốc.',
+    reqNote: '(Yêu cầu phải tải lên file giáo án mẫu .docx ở Khu vực 4)',
+    badgeColor: 'bg-emerald-500',
+  },
+  {
+    id: 'mode_digital_trans',
+    title: 'Chỉ bổ sung công nghệ Chuyển đổi số',
+    desc: 'Tăng cường trang thiết bị công nghệ số, Quiz, quét mã QR học tập vào sườn giáo án mẫu.',
+    reqNote: '(Yêu cầu phải tải lên file giáo án mẫu .docx ở Khu vực 4)',
+    badgeColor: 'bg-sky-500',
+  },
+];
+
 export const DEFAULT_REFERENCE_DOCUMENTS: ReferenceDocument[] = [
   {
     id: 'doc-5512',
