@@ -54,7 +54,7 @@ export async function exportLessonPlanToDocx(plan: FullLessonPlan) {
 
   const createMathParagraph = (
     text: string,
-    options?: DocxTextRunOptions & { alignment?: AlignmentType; spacing?: { before?: number; after?: number }; bullet?: any }
+    options?: DocxTextRunOptions & { alignment?: (typeof AlignmentType)[keyof typeof AlignmentType]; spacing?: { before?: number; after?: number }; bullet?: any }
   ) => {
     const children = convertTextWithMathToDocxRuns(text, options);
     return new Paragraph({
