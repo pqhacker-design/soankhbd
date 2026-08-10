@@ -169,6 +169,10 @@ app.post('/api/generate-lesson-plan', async (req, res) => {
       integratedTopics,
       differentiation,
       customNote,
+      sampleFileBase64,
+      sampleMimeType,
+      sampleFileName,
+      sampleEditMode,
     } = req.body;
 
     // Attach active BGD&ĐT reference guidelines context
@@ -178,10 +182,32 @@ app.post('/api/generate-lesson-plan', async (req, res) => {
 
     const numberOfPeriods = info?.numberOfPeriods || 1;
 
+    let sampleInstruction = '';
+    if (sampleEditMode && sampleEditMode !== 'none') {
+      const modeTitles: Record<string, string> = {
+        mode_full: 'TÍCH HỢP TOÀN DIỆN VÀO GIÁO ÁN MẪU (Phân tích tài liệu đính kèm, giữ cấu trúc gốc và bổ sung đầy đủ các tiêu chí tích hợp)',
+        mode_ai: 'BỔ SUNG YẾU TỐ TRÍ TUỆ NHÂN TẠO - AI (Giữ nguyên sườn giáo án đính kèm, lồng ghép học liệu số & nhiệm vụ ứng dụng AI thông minh)',
+        mode_stem: 'BỔ SUNG TÍCH HỢP GIÁO DỤC STEM (Thiết kế bổ sung các hoạt động STEM trải nghiệm gắn với bài học trong tài liệu gốc)',
+        mode_digital_competency: 'BỔ SUNG TÍCH HỢP NĂNG LỰC SỐ (Ghép nối các mục tiêu rèn luyện 24 kỹ năng số vào các bước bài học gốc)',
+        mode_digital_trans: 'BỔ SUNG CÔNG NGHỆ CHUYỂN ĐỔI SỐ (Tăng cường thiết bị công nghệ số, Quiz, quét mã QR học tập vào sườn giáo án)',
+      };
+
+      sampleInstruction = `
+================================================================================
+YÊU CẦU ĐẶC BIỆT: CHỈNH SỬA / TÍCH HỢP BỔ SUNG VÀO GIÁO ÁN MẪU ĐƯỢC TẢI LÊN (${sampleFileName || 'Tài liệu Word/PDF .docx'}):
+- CHẾ ĐỘ CHỌN: ${modeTitles[sampleEditMode] || sampleEditMode}
+- BẠN BẮT BUỘC BÁM SÁT SƯỜN CẤU TRÚC, NỘI DUNG VÀ TIẾN TRÌNH CỦA TÀI LIỆU GIÁO ÁN MẪU ĐƯỢC TẢI LÊN TRONG TỆP ĐÍNH KÈM.
+- BỔ SUNG & TÍCH HỢP SÂU CÁC TIÊU CHÍ SAU VÀO TỪNG TIẾN TRÌNH HOẠT ĐỘNG: ${(integratedTopics || []).join(', ')}
+- ĐẢM BẢO SỰ HÀI HÒA, KHÔNG LÀM XÁO TRỘN KIẾN THỨC NỀN CỦA BÀI HỌC GỐC NHƯNG LÀM NỔI BẬT NĂNG LỰC VÀ YẾU TỐ TÍCH HỢP MỚI.
+================================================================================
+`;
+    }
+
     const prompt = `
 Bạn là Chuyên gia Giáo dục Phổ thông Việt Nam hàng đầu, am hiểu sâu sắc Chương trình GDPT 2018 và các văn bản hướng dẫn mới nhất của Bộ Giáo dục và Đào tạo (Công văn 5512/BGDĐT-GDTrH đối với THCS/THPT, Công văn 3535/BGDĐT-GDTH đối với Tiểu học, Thông tư 22/2021/TT-BGDĐT, Thông tư 27/2020/TT-BGDĐT).
 
-Hãy soạn một KẾ HOẠCH BÀI DẠY (GIÁO ÁN) hoàn chỉnh, chuẩn mực chuyên môn cao, linh hoạt theo đúng thông tin sau:
+Hãy soạn/chỉnh sửa một KẾ HOẠCH BÀI DẠY (GIÁO ÁN) hoàn chỉnh, chuẩn mực chuyên môn cao, linh hoạt theo đúng thông tin sau:
+${sampleInstruction}
 - Cấp học: ${level}
 - Lớp: ${grade}
 - Môn học: ${subject}
@@ -368,9 +394,21 @@ HÃY TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON ĐÚNG ĐỊNH DẠNG SAU:
 }
 `;
 
+    const geminiContents: any[] = [];
+    if (sampleFileBase64) {
+      const cleanBase64 = sampleFileBase64.replace(/^data:.*?;base64,/, '');
+      geminiContents.push({
+        inlineData: {
+          mimeType: sampleMimeType || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          data: cleanBase64,
+        },
+      });
+    }
+    geminiContents.push({ text: prompt });
+
     const response = await ai.models.generateContent({
       model: 'gemini-3.6-flash',
-      contents: prompt,
+      contents: geminiContents.length === 1 ? prompt : geminiContents,
       config: {
         responseMimeType: 'application/json',
       },
