@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-serif: 'Newsreader', Georgia, Cambria, "Times New Roman", Times, serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #FDFCFB;
+    color: #1C1917;
+  }
+}
+
+.font-serif, .font-editorial {
+  font-family: 'Newsreader', Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+.font-sans {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* Editorial design accents */
+.bg-editorial-paper {
+  background-color: #FDFCFB;
+}
+
+.bg-editorial-card {
+  background-color: #F5F4F0;
+}
+
+.border-editorial {
+  border-color: #E7E5E0;
+}
+
+.editorial-shadow {
+  box-shadow: 0 4px 20px -2px rgba(42, 77, 105, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+}
+
+.editorial-divider {
+  border-bottom: 1px solid #E7E5E0;
+}
+
+/* Print Styles for Lesson Plans */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Hide everything on the screen by default */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Show only the printable lesson plan content */
+  #printable-pdf-content,
+  #printable-pdf-content *,
+  #printable-lesson-plan,
+  #printable-lesson-plan * {
+    visibility: visible !important;
+  }
+
+  #printable-pdf-content,
+  #printable-lesson-plan {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  #printable-pdf-content table,
+  #printable-lesson-plan table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    page-break-inside: auto;
+  }
+
+  #printable-pdf-content tr,
+  #printable-lesson-plan tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  #printable-pdf-content th,
+  #printable-pdf-content td,
+  #printable-lesson-plan th,
+  #printable-lesson-plan td {
+    border: 1px solid #000000 !important;
+    padding: 6px 8px !important;
+  }
+
+  #printable-pdf-content th,
+  #printable-lesson-plan th {
+    background-color: #f3f4f6 !important;
+    font-weight: bold !important;
+  }
+}
+

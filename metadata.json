@@ -1,0 +1,6 @@
+{
+  "name": "AI Lesson Planner Pro Việt Nam",
+  "description": "Hệ thống AI hỗ trợ giáo viên Việt Nam soạn Kế hoạch bài dạy (Giáo án) chuẩn GDPT 2018 & Công văn Bộ GD&ĐT",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
