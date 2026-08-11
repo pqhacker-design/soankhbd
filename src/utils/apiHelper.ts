@@ -1,4 +1,4 @@
-// Helper functions for storing and retrieving user-provided Gemini API key per user account
+import { setUserApiKeyInFirestore } from '../firebase';
 
 const KEY_PREFIX = 'user_gemini_api_key_';
 const ACTIVE_USER_ID_KEY = 'ai_planner_active_user_id';
@@ -40,6 +40,8 @@ export function setUserApiKey(key: string, userId?: string): void {
     } else {
       localStorage.setItem(storageKey, cleanKey);
     }
+    // Asynchronously save API Key to Firestore so it syncs across browsers/devices
+    setUserApiKeyInFirestore(targetId, cleanKey).catch(console.error);
   } else {
     if (!cleanKey) {
       localStorage.removeItem('user_gemini_api_key');
@@ -54,6 +56,7 @@ export function clearUserApiKey(userId?: string): void {
   const targetId = userId || getActiveUserId();
   if (targetId) {
     localStorage.removeItem(`${KEY_PREFIX}${targetId}`);
+    setUserApiKeyInFirestore(targetId, '').catch(console.error);
   }
   localStorage.removeItem('user_gemini_api_key');
 }
@@ -68,4 +71,5 @@ export function getApiKeyHeaders(userId?: string): Record<string, string> {
   }
   return headers;
 }
+
 
