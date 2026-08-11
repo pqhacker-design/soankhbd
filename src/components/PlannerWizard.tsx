@@ -90,23 +90,45 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ onPlanGenerated })
       const reader = new FileReader();
       reader.onload = async (event) => {
         const base64Data = event.target?.result as string;
+        const payload = {
+          fileBase64: base64Data,
+          mimeType: file.type || 'image/jpeg',
+          fileName: file.name,
+          subject,
+          grade,
+          textbook,
+        };
 
-        const res = await fetch('/api/extract-objectives', {
-          method: 'POST',
-          headers: getApiKeyHeaders(),
-          body: JSON.stringify({
-            fileBase64: base64Data,
-            mimeType: file.type || 'image/jpeg',
-            fileName: file.name,
-            subject,
-            grade,
-            textbook,
-          }),
-        });
+        let extractedData: any = null;
 
-        const data = await res.json();
-        if (data.success && data.extractedData) {
-          const ext = data.extractedData;
+        try {
+          const res = await fetch('/api/extract-objectives', {
+            method: 'POST',
+            headers: getApiKeyHeaders(),
+            body: JSON.stringify(payload),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.extractedData) {
+              extractedData = data.extractedData;
+            }
+          }
+        } catch (serverErr) {
+          console.warn('Server endpoint error, using client-side Gemini fallback:', serverErr);
+        }
+
+        if (!extractedData) {
+          try {
+            const { extractObjectivesDirect } = await import('../utils/clientGeminiService');
+            extractedData = await extractObjectivesDirect(payload);
+          } catch (clientErr: any) {
+            console.error('Client fallback extraction error:', clientErr);
+          }
+        }
+
+        if (extractedData) {
+          const ext = extractedData;
           if (ext.requirementsToAchieve) {
             setRequirementsToAchieveText(ext.requirementsToAchieve);
           }
@@ -127,7 +149,7 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ onPlanGenerated })
           }
           alert(`Đã tự động trích xuất Yêu cầu cần đạt & mục tiêu từ tài liệu "${file.name}" thành công!`);
         } else {
-          alert('Không thể trích xuất thông tin từ tài liệu. Vui lòng thử lại với file ảnh/PDF rõ nét hơn.');
+          alert('Không thể trích xuất thông tin từ tài liệu. Vui lòng kiểm tra lại API Key hoặc file đính kèm.');
         }
         setIsAnalyzingDoc(false);
       };
@@ -239,6 +261,43 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ onPlanGenerated })
     setIsGenerating(true);
     setGenerationProgress('Đang kết nối AI Gemini 3.6 & Phân tích chuẩn GDPT 2018...');
 
+    const payload = {
+      level,
+      subject,
+      grade,
+      textbook,
+      info: {
+        lessonTitle,
+        topic,
+        periodNumber,
+        numberOfPeriods,
+        duration,
+        date,
+        classGroup,
+        schoolName,
+        teacherName,
+        departmentName,
+      },
+      qualities: selectedQualities,
+      generalCompetencies: selectedGeneralCompetencies,
+      specificCompetencies: selectedSpecificCompetencies,
+      requirementsToAchieve: [requirementsToAchieveText],
+      methods: selectedMethods,
+      techniques: selectedTechniques,
+      organizationForms: selectedOrgForms,
+      equipments: selectedEquipments,
+      materials: ['SGK', 'Phiếu học tập'],
+      integratedTopics: selectedIntegrations,
+      customNote,
+      sampleFileBase64,
+      sampleMimeType,
+      sampleFileName,
+      sampleEditMode,
+    };
+
+    let generatedPlan: any = null;
+    let errorMessage = '';
+
     try {
       setTimeout(() => setGenerationProgress('Đang sinh 4 thành phần mục tiêu & Năng lực đặc thù...'), 1200);
       setTimeout(() => setGenerationProgress('Đang thiết kế tiến trình 5 Hoạt động theo CV 5512/3535...'), 2800);
@@ -247,57 +306,50 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ onPlanGenerated })
       const response = await fetch('/api/generate-lesson-plan', {
         method: 'POST',
         headers: getApiKeyHeaders(),
-        body: JSON.stringify({
-          level,
-          subject,
-          grade,
-          textbook,
-          info: {
-            lessonTitle,
-            topic,
-            periodNumber,
-            numberOfPeriods,
-            duration,
-            date,
-            classGroup,
-            schoolName,
-            teacherName,
-            departmentName,
-          },
-          qualities: selectedQualities,
-          generalCompetencies: selectedGeneralCompetencies,
-          specificCompetencies: selectedSpecificCompetencies,
-          requirementsToAchieve: [requirementsToAchieveText],
-          methods: selectedMethods,
-          techniques: selectedTechniques,
-          organizationForms: selectedOrgForms,
-          equipments: selectedEquipments,
-          materials: ['SGK', 'Phiếu học tập'],
-          integratedTopics: selectedIntegrations,
-          customNote,
-          sampleFileBase64,
-          sampleMimeType,
-          sampleFileName,
-          sampleEditMode,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
-
-      if (data.success && data.lessonPlan) {
-        onPlanGenerated({
-          ...data.lessonPlan,
-          layoutFormat: layoutFormat,
-        });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.lessonPlan) {
+          generatedPlan = data.lessonPlan;
+        } else {
+          errorMessage = data.error || '';
+        }
       } else {
-        alert('Lỗi tạo bài dạy: ' + (data.error || 'Vui lòng thử lại.'));
+        try {
+          const data = await response.json();
+          errorMessage = data.error || '';
+        } catch {
+          // Response is not JSON
+        }
       }
-    } catch (err: any) {
-      console.error(err);
-      alert('Không thể kết nối đến máy chủ AI. Vui lòng kiểm tra lại kết nối!');
-    } finally {
-      setIsGenerating(false);
+    } catch (serverErr) {
+      console.warn('Server endpoint error, attempting client-side fallback:', serverErr);
     }
+
+    if (!generatedPlan) {
+      try {
+        const { generateLessonPlanDirect } = await import('../utils/clientGeminiService');
+        generatedPlan = await generateLessonPlanDirect(payload);
+      } catch (clientErr: any) {
+        console.error('Client Gemini generation error:', clientErr);
+        if (!errorMessage) {
+          errorMessage = clientErr.message || 'Lỗi khi tạo bài dạy bằng AI.';
+        }
+      }
+    }
+
+    if (generatedPlan) {
+      onPlanGenerated({
+        ...generatedPlan,
+        layoutFormat: layoutFormat,
+      });
+    } else {
+      alert('Lỗi tạo bài dạy: ' + (errorMessage || 'Vui lòng kiểm tra lại Gemini API Key hoặc thử lại!'));
+    }
+
+    setIsGenerating(false);
   };
 
   return (

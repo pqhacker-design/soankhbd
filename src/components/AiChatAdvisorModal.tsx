@@ -34,16 +34,45 @@ export const AiChatAdvisorModal: React.FC = () => {
     setIsSending(true);
 
     try {
-      const response = await fetch('/api/chat-reference', {
-        method: 'POST',
-        headers: getApiKeyHeaders(),
-        body: JSON.stringify({ query: userMsg, history: messages }),
-      });
-      const data = await response.json();
-      if (data.answer) {
+      let answer = '';
+      try {
+        const response = await fetch('/api/chat-reference', {
+          method: 'POST',
+          headers: getApiKeyHeaders(),
+          body: JSON.stringify({ query: userMsg, history: messages }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.answer) {
+            answer = data.answer;
+          }
+        }
+      } catch (serverErr) {
+        console.warn('Server endpoint error in chat-reference, trying client fallback:', serverErr);
+      }
+
+      if (!answer) {
+        try {
+          const { chatReferenceDirect } = await import('../utils/clientGeminiService');
+          answer = await chatReferenceDirect({ query: userMsg, history: messages });
+        } catch (clientErr: any) {
+          console.error('Client chat fallback error:', clientErr);
+        }
+      }
+
+      if (answer) {
         setMessages([
           ...newHistory,
-          { sender: 'ai', text: data.answer, time: 'Vừa xong' },
+          { sender: 'ai', text: answer, time: 'Vừa xong' },
+        ]);
+      } else {
+        setMessages([
+          ...newHistory,
+          {
+            sender: 'ai',
+            text: 'Rất tiếc, đã xảy ra lỗi khi kết nối với AI. Vui lòng kiểm tra lại Gemini API Key cá nhân trong Cấu Hình Kết Nối API.',
+            time: 'Vừa xong',
+          },
         ]);
       }
     } catch (e) {

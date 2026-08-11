@@ -68,6 +68,10 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
     setIsTesting(true);
     setStatusMessage({ type: 'info', text: 'Đang kết nối kiểm tra Gemini API Key...' });
 
+    let isValid = false;
+    let errorMessage = '';
+
+    // First attempt: Server API endpoint
     try {
       const res = await fetch('/api/validate-api-key', {
         method: 'POST',
@@ -78,30 +82,54 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
         body: JSON.stringify({ userApiKey: cleanKey }),
       });
 
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setUserApiKey(cleanKey);
-        setStatusMessage({
-          type: 'success',
-          text: 'Xác thực thành công! Gemini API Key cá nhân đã sẵn sàng sử dụng.',
-        });
-        if (onSaveSuccess) onSaveSuccess();
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          isValid = true;
+        } else {
+          errorMessage = data.error || 'API Key không hợp lệ.';
+        }
       } else {
-        setStatusMessage({
-          type: 'error',
-          text: data.error || 'API Key không hợp lệ. Vui lòng kiểm tra lại mã đã dán.',
-        });
+        try {
+          const data = await res.json();
+          errorMessage = data.error || 'Mã API Key không hợp lệ.';
+        } catch {
+          // Response is not JSON (e.g. 404 HTML on static Vercel host)
+        }
       }
-    } catch (err: any) {
-      console.error(err);
+    } catch (serverErr) {
+      console.warn('Server endpoint error, falling back to direct client check:', serverErr);
+    }
+
+    // Second attempt: Direct client-side validation fallback
+    if (!isValid && !errorMessage) {
+      try {
+        const { validateApiKeyDirect } = await import('../utils/clientGeminiService');
+        const clientOk = await validateApiKeyDirect(cleanKey);
+        if (clientOk) {
+          isValid = true;
+        }
+      } catch (clientErr: any) {
+        console.error('Direct client validation error:', clientErr);
+        errorMessage = clientErr.message || 'Mã API Key không hợp lệ hoặc đã hết hạn. Vui lòng kiểm tra lại.';
+      }
+    }
+
+    if (isValid) {
+      setUserApiKey(cleanKey);
+      setStatusMessage({
+        type: 'success',
+        text: 'Xác thực thành công! Gemini API Key cá nhân đã sẵn sàng sử dụng.',
+      });
+      if (onSaveSuccess) onSaveSuccess();
+    } else {
       setStatusMessage({
         type: 'error',
-        text: 'Lỗi kết nối máy chủ khi kiểm tra API Key. Vui lòng thử lại.',
+        text: errorMessage || 'API Key không hợp lệ. Vui lòng kiểm tra lại mã đã dán.',
       });
-    } finally {
-      setIsTesting(false);
     }
+
+    setIsTesting(false);
   };
 
   const handleClearKey = () => {

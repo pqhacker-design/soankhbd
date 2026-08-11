@@ -159,36 +159,53 @@ HOẠT ĐỘNG ${i + 1}: ${act.name.toUpperCase()} (${act.duration})
   // Generate Supplementary Materials & Quizzes with AI
   const handleGenerateMaterials = async () => {
     setIsGeneratingMaterials(true);
+    const payload = {
+      lessonTitle: currentPlan.info.lessonTitle,
+      subject: currentPlan.subject,
+      grade: currentPlan.grade,
+      textbook: currentPlan.textbook,
+      promptType: 'all',
+    };
+
+    let generatedMaterials: any = null;
+
     try {
       const response = await fetch('/api/generate-materials', {
         method: 'POST',
         headers: getApiKeyHeaders(),
-        body: JSON.stringify({
-          lessonTitle: currentPlan.info.lessonTitle,
-          subject: currentPlan.subject,
-          grade: currentPlan.grade,
-          textbook: currentPlan.textbook,
-          promptType: 'all',
-        }),
+        body: JSON.stringify(payload),
       });
-      const data = await response.json();
-      if (data.success && data.materials) {
-        const updated = {
-          ...currentPlan,
-          supplementaryMaterials: data.materials,
-        };
-        setCurrentPlan(updated);
-        onSavePlan(updated);
-        alert('Đã tạo thành công Bộ Quiz trắc nghiệm 4 mức độ & Học liệu bổ trợ!');
-      } else {
-        alert('Không thể sinh học liệu: ' + (data.error || 'Vui lòng thử lại.'));
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.materials) {
+          generatedMaterials = data.materials;
+        }
       }
     } catch (e) {
-      console.error(e);
-      alert('Lỗi kết nối máy chủ AI.');
-    } finally {
-      setIsGeneratingMaterials(false);
+      console.warn('Server API error for materials generation, trying client fallback:', e);
     }
+
+    if (!generatedMaterials) {
+      try {
+        const { generateMaterialsDirect } = await import('../utils/clientGeminiService');
+        generatedMaterials = await generateMaterialsDirect(payload);
+      } catch (clientErr) {
+        console.error('Client materials generation error:', clientErr);
+      }
+    }
+
+    if (generatedMaterials) {
+      const updated = {
+        ...currentPlan,
+        supplementaryMaterials: generatedMaterials,
+      };
+      setCurrentPlan(updated);
+      onSavePlan(updated);
+      alert('Đã tạo thành công Bộ Quiz trắc nghiệm 4 mức độ & Học liệu bổ trợ!');
+    } else {
+      alert('Không thể sinh học liệu. Vui lòng kiểm tra lại API Key!');
+    }
+    setIsGeneratingMaterials(false);
   };
 
   return (

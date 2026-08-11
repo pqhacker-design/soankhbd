@@ -24,30 +24,47 @@ export const MaterialsBankView: React.FC = () => {
 
   const handleGenerate = async () => {
     setIsGenerating(true);
+    const payload = {
+      lessonTitle,
+      subject,
+      grade,
+      textbook: 'Kết nối tri thức với cuộc sống',
+      promptType,
+    };
+
+    let generated: any = null;
+
     try {
       const response = await fetch('/api/generate-materials', {
         method: 'POST',
         headers: getApiKeyHeaders(),
-        body: JSON.stringify({
-          lessonTitle,
-          subject,
-          grade,
-          textbook: 'Kết nối tri thức với cuộc sống',
-          promptType,
-        }),
+        body: JSON.stringify(payload),
       });
-      const data = await response.json();
-      if (data.success && data.materials) {
-        setMaterials(data.materials);
-      } else {
-        alert('Lỗi khởi tạo học liệu: ' + (data.error || 'Vui lòng thử lại.'));
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.materials) {
+          generated = data.materials;
+        }
       }
     } catch (e) {
-      console.error(e);
-      alert('Không thể kết nối máy chủ AI.');
-    } finally {
-      setIsGenerating(false);
+      console.warn('Server endpoint error in generate-materials, using client fallback:', e);
     }
+
+    if (!generated) {
+      try {
+        const { generateMaterialsDirect } = await import('../utils/clientGeminiService');
+        generated = await generateMaterialsDirect(payload);
+      } catch (clientErr) {
+        console.error('Client materials generation error:', clientErr);
+      }
+    }
+
+    if (generated) {
+      setMaterials(generated);
+    } else {
+      alert('Lỗi khởi tạo học liệu. Vui lòng kiểm tra lại Gemini API Key.');
+    }
+    setIsGenerating(false);
   };
 
   return (
