@@ -12,12 +12,25 @@ export function getClientGemini(customKey?: string): GoogleGenAI {
 }
 
 export async function validateApiKeyDirect(apiKey: string): Promise<boolean> {
-  const ai = getClientGemini(apiKey);
-  const response = await ai.models.generateContent({
-    model: 'gemini-3.6-flash',
-    contents: 'Respond with OK',
-  });
-  return !!response.text;
+  const cleanKey = apiKey.trim();
+  if (!cleanKey) return false;
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`);
+    return res.ok;
+  } catch (e) {
+    console.warn('Direct fetch validation failed:', e);
+    // Fallback attempt using SDK if fetch fails
+    try {
+      const ai = getClientGemini(cleanKey);
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: 'Ping',
+      });
+      return !!response.text;
+    } catch {
+      return false;
+    }
+  }
 }
 
 export async function generateLessonPlanDirect(payload: any): Promise<any> {
