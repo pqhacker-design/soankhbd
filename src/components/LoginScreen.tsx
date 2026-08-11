@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { UserProfile } from '../types';
 import {
   GraduationCap,
-  KeyRound,
   Mail,
   Lock,
   Eye,
@@ -12,7 +11,6 @@ import {
   CheckCircle2,
   Sparkles,
   School,
-  UserCheck,
   Building2,
 } from 'lucide-react';
 
@@ -22,19 +20,11 @@ interface LoginScreenProps {
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ usersList, onLoginSuccess }) => {
-  const [selectedUserId, setSelectedUserId] = useState<string>(usersList[0]?.id || '');
-  const [email, setEmail] = useState<string>(usersList[0]?.email || '');
+  const [email, setEmail] = useState<string>(usersList[0]?.email || 'pqhacker@gmail.com');
   const [password, setPassword] = useState<string>('123456');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  const handleSelectQuickUser = (user: UserProfile) => {
-    setSelectedUserId(user.id);
-    setEmail(user.email);
-    setPassword(user.password || '123456');
-    setErrorMessage(null);
-  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,14 +42,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ usersList, onLoginSucc
     const matchedUser = usersList.find((u) => u.email.trim().toLowerCase() === cleanEmail);
 
     if (!matchedUser) {
-      setErrorMessage('Email không tồn tại trong danh sách giáo viên. Vui lòng kiểm tra lại hoặc liên hệ Ban Quản Trị.');
+      setErrorMessage('Email không tồn tại trong hệ thống. Vui lòng kiểm tra lại địa chỉ email.');
       return;
     }
 
     const userPassword = matchedUser.password || '123456';
 
     if (userPassword !== cleanPass) {
-      setErrorMessage('Mật khẩu không chính xác. Mặc định thử nghiệm là 123456.');
+      setErrorMessage('Mật khẩu không chính xác. Vui lòng kiểm tra lại.');
       return;
     }
 
@@ -130,51 +120,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ usersList, onLoginSucc
                   Đăng Nhập Tài Khoản
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Chọn tài khoản giáo viên hoặc nhập Email &amp; Mật khẩu
+                  Nhập địa chỉ Email &amp; Mật khẩu tài khoản giáo viên
                 </p>
               </div>
               <span className="text-[10px] bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 font-bold px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-800">
                 Xác thực Giáo viên
               </span>
-            </div>
-
-            {/* Quick Demo Accounts Selection */}
-            <div className="mb-6">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
-                Chọn Nhanh Tài Khoản Thử Nghiệm:
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {usersList.slice(0, 4).map((u) => {
-                  const isSelected = selectedUserId === u.id || email.toLowerCase() === u.email.toLowerCase();
-                  return (
-                    <button
-                      type="button"
-                      key={u.id}
-                      onClick={() => handleSelectQuickUser(u)}
-                      className={`p-2.5 rounded-2xl border text-left flex items-center gap-2.5 transition-all ${
-                        isSelected
-                          ? 'bg-blue-50/90 dark:bg-blue-950/60 border-blue-500 text-blue-900 dark:text-blue-200 shadow-xs'
-                          : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      <img
-                        src={u.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-                        alt={u.name}
-                        className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-300 dark:border-slate-600"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold truncate flex items-center justify-between">
-                          <span className="truncate">{u.name}</span>
-                          {isSelected && <UserCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
-                        </div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                          {u.role} • {u.school || 'THPT Nguyễn Du'}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
             </div>
 
             {/* Login Form */}
@@ -187,7 +138,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ usersList, onLoginSucc
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="nhap.email@nguyendu.edu.vn"
+                  placeholder="pqhacker@gmail.com"
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                   required
                 />
@@ -195,14 +146,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ usersList, onLoginSucc
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-slate-400" /> Mật Khẩu (Do Admin cấp) <span className="text-rose-500">*</span>
+                  <Lock className="w-3.5 h-3.5 text-slate-400" /> Mật Khẩu <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Mật khẩu mặc định: 123456"
+                    placeholder="Mật khẩu của bạn"
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-3.5 pr-10 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                     required
                   />
@@ -214,9 +165,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ usersList, onLoginSucc
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  💡 Mật khẩu dùng thử nghiệm mặc định cho tất cả giáo viên: <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono font-bold text-blue-600">123456</code>
-                </p>
               </div>
 
               {errorMessage && (
