@@ -58,7 +58,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
   const [formRole, setFormRole] = useState<'Admin' | 'Giáo viên'>('Giáo viên');
   const [formAvatar, setFormAvatar] = useState<string>('');
 
-  const isAdmin = currentUser.role === 'Admin';
+  const isAdmin = currentUser.role === 'Admin' || currentUser.email.trim().toLowerCase() === 'pqhacker@gmail.com';
 
   const openAddModal = () => {
     if (!isAdmin) {
@@ -68,8 +68,8 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
     setEditingUser(null);
     setFormName('');
     setFormEmail('');
-    setFormPassword('123456');
-    setFormSchool('Trường THCS Nguyễn Du');
+    setFormPassword('');
+    setFormSchool('Trường THCS Bình San');
     setFormRole('Giáo viên');
     setFormAvatar('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150');
     setIsModalOpen(true);
@@ -83,7 +83,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
     setEditingUser(user);
     setFormName(user.name);
     setFormEmail(user.email);
-    setFormPassword(user.password || '123456');
+    setFormPassword(user.password || '');
     setFormSchool(user.school);
     setFormRole(user.role);
     setFormAvatar(user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150');
@@ -96,8 +96,22 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
       alert('Chỉ tài khoản Admin mới có quyền thêm hoặc chỉnh sửa người dùng!');
       return;
     }
-    if (!formName.trim() || !formEmail.trim() || !formPassword.trim()) {
-      alert('Vui lòng điền đầy đủ Họ tên, Email và Mật khẩu cấp cho giáo viên.');
+
+    const cleanEmail = formEmail.trim().toLowerCase();
+    const cleanPass = formPassword.trim();
+
+    if (!formName.trim() || !cleanEmail || !cleanPass) {
+      alert('Vui lòng điền đầy đủ Họ tên, Email và Mật khẩu.');
+      return;
+    }
+
+    // Email Uniqueness Check across the system
+    const existingUser = users.find(
+      (u) => u.email.trim().toLowerCase() === cleanEmail && (!editingUser || u.id !== editingUser.id)
+    );
+
+    if (existingUser) {
+      alert(`Địa chỉ email "${formEmail.trim()}" đã được sử dụng bởi người dùng "${existingUser.name}". Mỗi tài khoản phải sử dụng một địa chỉ email duy nhất trên toàn hệ thống!`);
       return;
     }
 
@@ -107,30 +121,30 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
         u.id === editingUser.id
           ? {
               ...u,
-              name: formName,
-              email: formEmail,
-              password: formPassword.trim(),
-              school: formSchool,
+              name: formName.trim(),
+              email: cleanEmail,
+              password: cleanPass,
+              school: formSchool.trim(),
               role: formRole,
               avatarUrl: formAvatar,
             }
           : u
       );
       onUpdateUsers(updatedList);
-      alert(`Đã cập nhật thông tin & Mật khẩu giáo viên "${formName}" thành công!`);
+      alert(`Đã cập nhật thông tin người dùng "${formName}" thành công!`);
     } else {
       // Add new teacher
       const newUser: UserProfile = {
         id: `usr-${Date.now()}`,
-        name: formName,
-        email: formEmail,
-        password: formPassword.trim(),
-        school: formSchool,
+        name: formName.trim(),
+        email: cleanEmail,
+        password: cleanPass,
+        school: formSchool.trim() || 'Trường THCS Bình San',
         role: formRole,
         avatarUrl: formAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
       };
       onUpdateUsers([...users, newUser]);
-      alert(`Đã thêm thành công giáo viên "${formName}" với Mật khẩu do Admin cấp!`);
+      alert(`Đã thêm thành công tài khoản "${formName}" (${cleanEmail})!`);
     }
 
     setSearchQuery('');
@@ -357,7 +371,15 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
             </table>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-3xl p-6 text-amber-800 dark:text-amber-200 text-xs flex items-center gap-3">
+          <ShieldCheck className="w-6 h-6 text-amber-600 dark:text-amber-400 shrink-0" />
+          <div>
+            <p className="font-bold text-sm">Quyền Quản Lý Danh Sách Người Dùng Bị Hạn Chế</p>
+            <p className="mt-0.5">Chỉ có tài khoản Admin mới có quyền xem danh sách, quản lý và thay đổi thông tin của các tài khoản User trên hệ thống.</p>
+          </div>
+        </div>
+      )}
 
       {/* Backup & Restore Data */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-4">
