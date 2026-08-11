@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import { DEFAULT_REFERENCE_DOCUMENTS } from './src/data/presets';
 import { ReferenceDocument } from './src/types';
+import { cleanAndParseJson } from './src/utils/jsonRepair';
 
 dotenv.config();
 
@@ -135,7 +136,7 @@ HÃY TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON VỚI CẤU TRÚC SAU:
     });
 
     const jsonText = response.text || '{}';
-    res.json({ success: true, extractedData: JSON.parse(jsonText) });
+    res.json({ success: true, extractedData: cleanAndParseJson(jsonText) });
   } catch (error: any) {
     console.error('Error extracting objectives:', error);
     const isMissing = error.message?.includes('MISSING_API_KEY');
@@ -415,7 +416,7 @@ HÃY TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON ĐÚNG ĐỊNH DẠNG SAU:
     });
 
     const jsonText = response.text || '{}';
-    const lessonPlanData = JSON.parse(jsonText);
+    const lessonPlanData = cleanAndParseJson(jsonText);
     res.json({ success: true, lessonPlan: lessonPlanData });
   } catch (error: any) {
     console.error('Error generating lesson plan:', error);
@@ -518,7 +519,7 @@ Trả về định dạng JSON duy nhất:
     });
 
     const jsonText = response.text || '{}';
-    res.json({ success: true, materials: JSON.parse(jsonText) });
+    res.json({ success: true, materials: cleanAndParseJson(jsonText) });
   } catch (error: any) {
     console.error('Error generating materials:', error);
     const isMissing = error.message?.includes('MISSING_API_KEY');
@@ -573,7 +574,7 @@ Hãy trả về duy nhất đối tượng JSON Hoạt động dạy học mới
     });
 
     const jsonText = response.text || '{}';
-    res.json({ success: true, activity: JSON.parse(jsonText) });
+    res.json({ success: true, activity: cleanAndParseJson(jsonText) });
   } catch (error: any) {
     console.error('Error refining activity:', error);
     const isMissing = error.message?.includes('MISSING_API_KEY');
