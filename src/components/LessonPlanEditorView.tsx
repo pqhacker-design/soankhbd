@@ -562,15 +562,181 @@ HOẠT ĐỘNG ${i + 1}: ${act.name.toUpperCase()} (${act.duration})
           </div>
 
           {/* Section IV: DIFFERENTIATION & ASSESSMENT */}
-          <div className="space-y-3 font-sans">
-            <h4 className="font-bold text-sm text-blue-900 dark:text-blue-300 uppercase border-b border-slate-200 dark:border-slate-800 pb-1">
-              IV. HƯỚNG DẪN ĐÁNH GIÁ &amp; PHÂN HÓA DẠY HỌC
+          <div className="space-y-4 font-sans border-t border-slate-200 dark:border-slate-800 pt-4">
+            <h4 className="font-bold text-sm text-blue-900 dark:text-blue-300 uppercase border-b border-slate-200 dark:border-slate-800 pb-1 flex items-center justify-between">
+              <span>IV. HƯỚNG DẪN ĐÁNH GIÁ &amp; PHÂN HÓA DẠY HỌC</span>
             </h4>
-            <div className="text-xs space-y-2">
-              <p><span className="font-semibold">Phân hóa học sinh yếu/cần hỗ trợ:</span> {currentPlan.differentiation.weakSupport}</p>
-              <p><span className="font-semibold">Phân hóa học sinh khá/giỏi:</span> {currentPlan.differentiation.advancedSupport}</p>
-              <p><span className="font-semibold">Phương pháp đánh giá:</span> {currentPlan.assessment.type} ({currentPlan.assessment.details})</p>
+            <div className="text-xs space-y-2 text-slate-700 dark:text-slate-300">
+              <p><span className="font-semibold text-slate-900 dark:text-white">• Phân hóa học sinh yếu / cần hỗ trợ:</span> <MathText text={currentPlan.differentiation.weakSupport} /></p>
+              {currentPlan.differentiation.averageSupport && (
+                <p><span className="font-semibold text-slate-900 dark:text-white">• Phân hóa học sinh trung bình:</span> <MathText text={currentPlan.differentiation.averageSupport} /></p>
+              )}
+              <p><span className="font-semibold text-slate-900 dark:text-white">• Phân hóa học sinh khá / giỏi:</span> <MathText text={currentPlan.differentiation.advancedSupport} /></p>
+              {currentPlan.differentiation.giftedSupport && (
+                <p><span className="font-semibold text-slate-900 dark:text-white">• Phân hóa học sinh năng khiếu:</span> <MathText text={currentPlan.differentiation.giftedSupport} /></p>
+              )}
+              <p><span className="font-semibold text-slate-900 dark:text-white">• Phương pháp &amp; Hình thức đánh giá:</span> <MathText text={`${currentPlan.assessment.type} (${currentPlan.assessment.details})`} /></p>
             </div>
+
+            {/* Rubrics Table */}
+            <div className="mt-3">
+              <p className="font-bold text-xs text-slate-900 dark:text-white mb-2">Bảng Ma Trận Tiêu Chí Đánh Giá (Rubrics):</p>
+              <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-xl">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100 dark:bg-slate-800 font-bold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700">
+                      <th className="p-2.5 w-1/5 border-r border-slate-200 dark:border-slate-700">Tiêu chí đánh giá</th>
+                      <th className="p-2.5 w-1/5 border-r border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400">Mức 4 (Xuất sắc)</th>
+                      <th className="p-2.5 w-1/5 border-r border-slate-200 dark:border-slate-700 text-blue-700 dark:text-blue-400">Mức 3 (Đạt yêu cầu)</th>
+                      <th className="p-2.5 w-1/5 border-r border-slate-200 dark:border-slate-700 text-amber-700 dark:text-amber-400">Mức 2 (Cần cố gắng)</th>
+                      <th className="p-2.5 w-1/5 text-rose-700 dark:text-rose-400">Mức 1 (Chưa đạt)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700 text-slate-700 dark:text-slate-300">
+                    {(currentPlan.assessment.rubrics && currentPlan.assessment.rubrics.length > 0) ? (
+                      currentPlan.assessment.rubrics.map((r, rIdx) => (
+                        <tr key={rIdx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <td className="p-2.5 font-semibold border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40">
+                            <MathText text={r.criteria} />
+                          </td>
+                          <td className="p-2.5 border-r border-slate-200 dark:border-slate-700"><MathText text={r.level4} /></td>
+                          <td className="p-2.5 border-r border-slate-200 dark:border-slate-700"><MathText text={r.level3} /></td>
+                          <td className="p-2.5 border-r border-slate-200 dark:border-slate-700"><MathText text={r.level2} /></td>
+                          <td className="p-2.5"><MathText text={r.level1} /></td>
+                        </tr>
+                      ))
+                    ) : (
+                      <>
+                        <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <td className="p-2.5 font-semibold border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40">
+                            Thái độ &amp; Nhận thức bài học
+                          </td>
+                          <td className="p-2.5 border-r border-slate-200 dark:border-slate-700">Chủ động dẫn dắt, tích cực thảo luận và giúp đỡ bạn</td>
+                          <td className="p-2.5 border-r border-slate-200 dark:border-slate-700">Hợp tác làm việc nhóm, hoàn thành nhiệm vụ được giao</td>
+                          <td className="p-2.5 border-r border-slate-200 dark:border-slate-700">Cần GV nhắc nhở để tập trung thực hiện bài tập</td>
+                          <td className="p-2.5">Thụ động, chưa tham gia hoạt động chung</td>
+                        </tr>
+                        <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <td className="p-2.5 font-semibold border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40">
+                            Chất lượng Phiếu học tập &amp; Sản phẩm
+                          </td>
+                          <td className="p-2.5 border-r border-slate-200 dark:border-slate-700">Chính xác tuyệt đối, lập luận logic, trình bày sáng tạo</td>
+                          <td className="p-2.5 border-r border-slate-200 dark:border-slate-700">Đầy đủ các yêu cầu cơ bản, tính toán chính xác</td>
+                          <td className="p-2.5 border-r border-slate-200 dark:border-slate-700">Còn 1-2 lỗi tính toán nhỏ hoặc thiếu bước giải thích</td>
+                          <td className="p-2.5">Nhiều sai sót, chưa hoàn thiện sản phẩm</td>
+                        </tr>
+                      </>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Section V: SUPPLEMENTARY MATERIALS (Worksheets & Quiz) */}
+          <div className="space-y-4 font-sans border-t border-slate-200 dark:border-slate-800 pt-4">
+            <h4 className="font-bold text-sm text-blue-900 dark:text-blue-300 uppercase border-b border-slate-200 dark:border-slate-800 pb-1 flex items-center justify-between">
+              <span>V. PHỤ LỤC: HỌC LIỆU BỔ TRỢ, PHIẾU HỌC TẬP &amp; QUIZ TRẮC NGHIỆM</span>
+              {!currentPlan.supplementaryMaterials && (
+                <button
+                  onClick={handleGenerateMaterials}
+                  disabled={isGeneratingMaterials}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded-lg font-normal transition-all"
+                >
+                  {isGeneratingMaterials ? 'Đang khởi tạo...' : '+ Khởi tạo Phiếu học tập & Quiz'}
+                </button>
+              )}
+            </h4>
+
+            {currentPlan.supplementaryMaterials ? (
+              <div className="space-y-6 text-xs">
+                {/* 1. Worksheets */}
+                {currentPlan.supplementaryMaterials.worksheets && currentPlan.supplementaryMaterials.worksheets.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="font-bold text-slate-900 dark:text-white text-xs uppercase text-blue-800 dark:text-blue-400">
+                      1. Phiếu Học Tập Dành Cho Học Sinh:
+                    </p>
+                    {currentPlan.supplementaryMaterials.worksheets.map((ws, wIdx) => (
+                      <div key={ws.id || wIdx} className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3">
+                        <h5 className="font-bold text-slate-900 dark:text-white text-sm">
+                          <MathText text={ws.title} />
+                        </h5>
+                        <p className="text-slate-600 dark:text-slate-400 italic">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">Hướng dẫn:</span> <MathText text={ws.instructions} />
+                        </p>
+                        <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-900">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="bg-slate-100 dark:bg-slate-800 font-semibold text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+                                <th className="p-2 w-16 text-center border-r border-slate-200 dark:border-slate-700">Câu</th>
+                                <th className="p-2">Nội dung câu hỏi &amp; Khung làm bài</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                              {ws.questions.map((q) => (
+                                <tr key={q.id}>
+                                  <td className="p-2 font-bold text-center border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40">
+                                    Câu {q.number}
+                                  </td>
+                                  <td className="p-2 space-y-1">
+                                    <p className="font-medium text-slate-900 dark:text-white"><MathText text={q.text} /></p>
+                                    <p className="text-slate-400 italic text-[11px]"><MathText text={q.spaceForAnswer || '(Học sinh hoàn thành câu trả lời tại đây...)'} /></p>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 2. Quiz Questions */}
+                {currentPlan.supplementaryMaterials.quizQuestions && currentPlan.supplementaryMaterials.quizQuestions.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="font-bold text-slate-900 dark:text-white text-xs uppercase text-blue-800 dark:text-blue-400">
+                      2. Bộ Câu Hỏi Quiz Trắc Nghiệm Củng Cố (4 Mức Độ Nhận Thức):
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {currentPlan.supplementaryMaterials.quizQuestions.map((quiz, qIdx) => (
+                        <div key={quiz.id || qIdx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-slate-900 dark:text-white">Câu {qIdx + 1}:</span>
+                            <span className="bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 font-semibold px-2 py-0.5 rounded-full text-[10px]">
+                              {quiz.level}
+                            </span>
+                          </div>
+                          <p className="font-medium text-slate-800 dark:text-slate-200"><MathText text={quiz.question} /></p>
+                          <div className="grid grid-cols-2 gap-1.5 pt-1">
+                            {quiz.options.map((opt, oIdx) => (
+                              <div
+                                key={oIdx}
+                                className={`p-1.5 rounded-lg border text-[11px] ${
+                                  oIdx === quiz.correctAnswer
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 font-semibold text-emerald-900 dark:text-emerald-200'
+                                    : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                                }`}
+                              >
+                                <span className="font-bold mr-1">{String.fromCharCode(65 + oIdx)}.</span>
+                                <MathText text={opt} />
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 italic pt-1 border-t border-slate-100 dark:border-slate-800">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">Giải thích:</span> <MathText text={quiz.explanation} />
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                Chưa có Phiếu học tập &amp; Quiz trắc nghiệm. Nhấn nút <strong>"+ Khởi tạo Phiếu học tập &amp; Quiz"</strong> ở trên để AI tạo tự động.
+              </p>
+            )}
           </div>
         </div>
       )}
