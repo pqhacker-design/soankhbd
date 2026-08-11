@@ -1,28 +1,66 @@
-// Helper functions for storing and retrieving user-provided Gemini API key
+// Helper functions for storing and retrieving user-provided Gemini API key per user account
 
-const STORAGE_KEY = 'user_gemini_api_key';
+const KEY_PREFIX = 'user_gemini_api_key_';
+const ACTIVE_USER_ID_KEY = 'ai_planner_active_user_id';
 
-export function getUserApiKey(): string {
+export function getActiveUserId(): string {
   if (typeof window === 'undefined') return '';
-  return localStorage.getItem(STORAGE_KEY) || '';
+  return localStorage.getItem(ACTIVE_USER_ID_KEY) || '';
 }
 
-export function setUserApiKey(key: string): void {
+export function setActiveUserId(userId: string): void {
   if (typeof window === 'undefined') return;
-  if (!key.trim()) {
-    localStorage.removeItem(STORAGE_KEY);
+  if (userId) {
+    localStorage.setItem(ACTIVE_USER_ID_KEY, userId);
   } else {
-    localStorage.setItem(STORAGE_KEY, key.trim());
+    localStorage.removeItem(ACTIVE_USER_ID_KEY);
   }
 }
 
-export function clearUserApiKey(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(STORAGE_KEY);
+export function getUserApiKey(userId?: string): string {
+  if (typeof window === 'undefined') return '';
+  const targetId = userId || getActiveUserId();
+  if (targetId) {
+    const userKey = localStorage.getItem(`${KEY_PREFIX}${targetId}`);
+    if (userKey) return userKey.trim();
+  }
+  // Fallback to global key if set previously
+  const legacyKey = localStorage.getItem('user_gemini_api_key');
+  return legacyKey ? legacyKey.trim() : '';
 }
 
-export function getApiKeyHeaders(): Record<string, string> {
-  const userKey = getUserApiKey();
+export function setUserApiKey(key: string, userId?: string): void {
+  if (typeof window === 'undefined') return;
+  const targetId = userId || getActiveUserId();
+  const cleanKey = key.trim();
+
+  if (targetId) {
+    const storageKey = `${KEY_PREFIX}${targetId}`;
+    if (!cleanKey) {
+      localStorage.removeItem(storageKey);
+    } else {
+      localStorage.setItem(storageKey, cleanKey);
+    }
+  } else {
+    if (!cleanKey) {
+      localStorage.removeItem('user_gemini_api_key');
+    } else {
+      localStorage.setItem('user_gemini_api_key', cleanKey);
+    }
+  }
+}
+
+export function clearUserApiKey(userId?: string): void {
+  if (typeof window === 'undefined') return;
+  const targetId = userId || getActiveUserId();
+  if (targetId) {
+    localStorage.removeItem(`${KEY_PREFIX}${targetId}`);
+  }
+  localStorage.removeItem('user_gemini_api_key');
+}
+
+export function getApiKeyHeaders(userId?: string): Record<string, string> {
+  const userKey = getUserApiKey(userId);
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -31,3 +69,4 @@ export function getApiKeyHeaders(): Record<string, string> {
   }
   return headers;
 }
+
