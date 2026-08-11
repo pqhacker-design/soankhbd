@@ -567,17 +567,131 @@ export async function exportLessonPlanToDocx(plan: FullLessonPlan) {
           createSectionHeader('III. TIẾN TRÌNH DẠY HỌC'),
           ...activityElements,
 
-          createSectionHeader('IV. HƯỚNG DẪN ĐÁNH GIÁ & PHÂN HÓA'),
-          createBullet(plan.differentiation.weakSupport, 'Phân hóa HS yếu / hỗ trợ:'),
-          createBullet(plan.differentiation.advancedSupport, 'Phân hóa HS khá / giỏi:'),
-          createBullet(`${plan.assessment.type} - ${plan.assessment.details}`, 'Phương pháp đánh giá:'),
+          createSectionHeader('IV. HƯỚNG DẪN ĐÁNH GIÁ & PHÂN HÓA DẠY HỌC'),
+          createBullet(plan.differentiation.weakSupport || 'Cung cấp mẫu khung hướng dẫn từng bước; phân công bạn khá hỗ trợ.', 'Phân hóa HS yếu / cần hỗ trợ:'),
+          createBullet(plan.differentiation.averageSupport || 'Yêu cầu hoàn thành các câu hỏi cơ bản và thực hành phiếu học tập.', 'Phân hóa HS trung bình:'),
+          createBullet(plan.differentiation.advancedSupport || 'Khuyến khích tìm tòi các cách giải khác nhau, tổng hợp kiến thức.', 'Phân hóa HS khá / giỏi:'),
+          createBullet(plan.differentiation.giftedSupport || 'Giao bài tập vận dụng cao, thiết kế dự án nhỏ hoặc câu hỏi mở sáng tạo.', 'Phân hóa HS năng khiếu / đặc biệt:'),
+          createBullet(`${plan.assessment.type} (${plan.assessment.details})`, 'Phương pháp & Hình thức đánh giá:'),
+
+          // Rubrics Table
+          createSubHeader('Bảng Ma trận Tiêu chí Đánh giá Rubrics:'),
+          (() => {
+            const rubricsList = (plan.assessment.rubrics && plan.assessment.rubrics.length > 0)
+              ? plan.assessment.rubrics
+              : [
+                  {
+                    criteria: 'Thái độ & Ý thức làm việc nhóm',
+                    level4: 'Chủ động dẫn dắt, tích cực thảo luận và trợ giúp thành viên khác',
+                    level3: 'Tham gia đầy đủ, hoàn thành nhiệm vụ nhóm đúng hạn',
+                    level2: 'Cần sự nhắc nhở của GV để hoàn thành bài tập',
+                    level1: 'Thụ động, chưa chú ý thực hiện nhiệm vụ nhóm',
+                  },
+                  {
+                    criteria: 'Chất lượng Sản phẩm Phiếu học tập',
+                    level4: 'Chính xác tuyệt đối, trình bày khoa học, có sáng tạo',
+                    level3: 'Đầy đủ nội dung cơ bản, tính toán chính xác',
+                    level2: 'Còn 1-2 sai sót nhỏ hoặc trình bày chưa cẩn thận',
+                    level1: 'Chưa hoàn thành sản phẩm hoặc sai sót nhiều',
+                  },
+                ];
+
+            const rubricRows: TableRow[] = [
+              new TableRow({
+                children: [
+                  new TableCell({
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Tiêu chí', bold: true, color: '1E3A8A', font: 'Times New Roman', size: 22 })] })],
+                  }),
+                  new TableCell({
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Mức 4 (Xuất sắc)', bold: true, color: '0F766E', font: 'Times New Roman', size: 22 })] })],
+                  }),
+                  new TableCell({
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Mức 3 (Đạt yêu cầu)', bold: true, color: '1D4ED8', font: 'Times New Roman', size: 22 })] })],
+                  }),
+                  new TableCell({
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Mức 2 (Cần cố gắng)', bold: true, color: 'B45309', font: 'Times New Roman', size: 22 })] })],
+                  }),
+                  new TableCell({
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                    children: [new Paragraph({ children: [new TextRun({ text: 'Mức 1 (Chưa đạt)', bold: true, color: 'BE123C', font: 'Times New Roman', size: 22 })] })],
+                  }),
+                ],
+              }),
+            ];
+
+            rubricsList.forEach((r) => {
+              rubricRows.push(
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [createMathParagraph(r.criteria, { bold: true, font: 'Times New Roman', size: 22 })] }),
+                    new TableCell({ children: [createMathParagraph(r.level4, { font: 'Times New Roman', size: 22 })] }),
+                    new TableCell({ children: [createMathParagraph(r.level3, { font: 'Times New Roman', size: 22 })] }),
+                    new TableCell({ children: [createMathParagraph(r.level2, { font: 'Times New Roman', size: 22 })] }),
+                    new TableCell({ children: [createMathParagraph(r.level1, { font: 'Times New Roman', size: 22 })] }),
+                  ],
+                })
+              );
+            });
+
+            return new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              borders: {
+                top: { style: BorderStyle.SINGLE, size: 4, color: '94A3B8' },
+                bottom: { style: BorderStyle.SINGLE, size: 4, color: '94A3B8' },
+                left: { style: BorderStyle.SINGLE, size: 4, color: '94A3B8' },
+                right: { style: BorderStyle.SINGLE, size: 4, color: '94A3B8' },
+                insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: 'E2E8F0' },
+                insideVertical: { style: BorderStyle.SINGLE, size: 4, color: 'E2E8F0' },
+              },
+              rows: rubricRows,
+            });
+          })(),
 
           ...(() => {
             const supp: (Paragraph | Table)[] = [];
             supp.push(createSectionHeader('V. PHỤ LỤC: NGÂN HÀNG HỌC LIỆU BỔ TRỢ & BỘ CÂU HỎI QUIZ CỦNG CỐ'));
 
             // 1. Worksheets
-            const worksheets = plan.supplementaryMaterials?.worksheets || [];
+            const worksheets = (plan.supplementaryMaterials?.worksheets && plan.supplementaryMaterials.worksheets.length > 0)
+              ? plan.supplementaryMaterials.worksheets
+              : [
+                  {
+                    id: 'ws-default-1',
+                    title: `PHIẾU HỌC TẬP SỐ 1: KHÁM PHÁ KIẾN THỨC BÀI ${plan.info.lessonTitle.toUpperCase()}`,
+                    instructions: 'Học sinh đọc kỹ SGK và thảo luận nhóm để hoàn thành các câu hỏi dưới đây:',
+                    questions: [
+                      {
+                        id: 'q1',
+                        number: 1,
+                        text: `Hãy phát biểu định nghĩa / khái niệm trọng tâm của bài ${plan.info.lessonTitle}.`,
+                        spaceForAnswer: '(Học sinh ghi câu trả lời và ý chính vào khung này...)',
+                      },
+                      {
+                        id: 'q2',
+                        number: 2,
+                        text: 'Nêu các bước thực hiện hoặc công thức áp dụng trong bài học.',
+                        spaceForAnswer: '(Học sinh viết công thức và các bước chi tiết...)',
+                      },
+                    ],
+                  },
+                  {
+                    id: 'ws-default-2',
+                    title: `PHIẾU HỌC TẬP SỐ 2: LUYỆN TẬP VÀ VẬN DỤNG BÀI ${plan.info.lessonTitle.toUpperCase()}`,
+                    instructions: 'Học sinh làm việc cá nhân hoàn thành bài tập củng cố:',
+                    questions: [
+                      {
+                        id: 'q3',
+                        number: 1,
+                        text: 'Giải bài tập áp dụng trực tiếp kiến thức vừa học.',
+                        spaceForAnswer: '(Học sinh trình bày lời giải chi tiết...)',
+                      },
+                    ],
+                  },
+                ];
 
             supp.push(createSubHeader('1. Phiếu học tập (Worksheets) dành cho học sinh:'));
 
@@ -651,7 +765,62 @@ export async function exportLessonPlanToDocx(plan: FullLessonPlan) {
             });
 
             // 2. Quiz Questions
-            const quizQuestions = plan.supplementaryMaterials?.quizQuestions || [];
+            const quizQuestions = (plan.supplementaryMaterials?.quizQuestions && plan.supplementaryMaterials.quizQuestions.length > 0)
+              ? plan.supplementaryMaterials.quizQuestions
+              : [
+                  {
+                    id: 'quiz-def-1',
+                    question: `Kiến thức cốt lõi quan trọng nhất của bài ${plan.info.lessonTitle} là gì?`,
+                    options: [
+                      'Khái niệm và định nghĩa chính xác trong SGK',
+                      'Phương pháp giải bài tập thực hành',
+                      'Ứng dụng thực tế đời sống',
+                      'Tất cả các phương án trên đều đúng',
+                    ],
+                    correctAnswer: 3,
+                    explanation: 'Bài học bao gồm cả lý thuyết nền tảng, kỹ năng thực hành và vận dụng thực tiễn.',
+                    level: 'Nhận biết',
+                  },
+                  {
+                    id: 'quiz-def-2',
+                    question: `Khi thực hiện bài tập liên quan đến ${plan.info.lessonTitle}, học sinh cần lưu ý điều gì đầu tiên?`,
+                    options: [
+                      'Đọc kỹ đề bài và xác định dữ kiện ban đầu',
+                      'Viết ngay kết quả mà không cần trình bày',
+                      'Bỏ qua các bước kiểm tra',
+                      'Chỉ làm phần bài tập nâng cao',
+                    ],
+                    correctAnswer: 0,
+                    explanation: 'Đọc kỹ đề bài là bước tiên quyết để xác định đúng phương pháp giải.',
+                    level: 'Thông hiểu',
+                  },
+                  {
+                    id: 'quiz-def-3',
+                    question: `Ứng dụng thực tế của bài học ${plan.info.lessonTitle} giúp giải quyết vấn đề nào trong học tập và đời sống?`,
+                    options: [
+                      'Tối ưu hóa các tính toán và phân tích logic',
+                      'Hệ thống hóa kiến thức phục vụ kiểm tra đánh giá',
+                      'Phát triển năng lực giải quyết vấn đề thực tiễn',
+                      'Cả 3 đáp án trên',
+                    ],
+                    correctAnswer: 3,
+                    explanation: 'Chương trình GDPT 2018 chú trọng phát triển toàn diện năng lực và phẩm chất học sinh.',
+                    level: 'Vận dụng',
+                  },
+                  {
+                    id: 'quiz-def-4',
+                    question: `Để mở rộng và sáng tạo từ kiến thức bài ${plan.info.lessonTitle}, định hướng phát triển nào là tối ưu?`,
+                    options: [
+                      'Xây dựng dự án học tập nhỏ hoặc sản phẩm STEM liên môn',
+                      'Chỉ học thuộc lòng lý thuyết',
+                      'Không cần liên hệ thực tế',
+                      'Chỉ giải các bài tập đơn giản',
+                    ],
+                    correctAnswer: 0,
+                    explanation: 'Dự án STEM và học tập trải nghiệm giúp khắc sâu kiến thức ở mức độ vận dụng cao.',
+                    level: 'Vận dụng cao',
+                  },
+                ];
 
             supp.push(createSubHeader('2. Bộ câu hỏi Quiz Trắc nghiệm Củng cố & Ma trận Đánh giá (4 Mức độ):'));
 
