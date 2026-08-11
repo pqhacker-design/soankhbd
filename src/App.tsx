@@ -13,7 +13,17 @@ import { SwitchUserModal } from './components/SwitchUserModal';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { ConfirmDeleteModal } from './components/ConfirmDeleteModal';
 import { FullLessonPlan, UserProfile } from './types';
-import { setActiveUserId } from './utils/apiHelper';
+import { setActiveUserId, setUserApiKey } from './utils/apiHelper';
+import {
+  syncUsersWithFirestore,
+  saveAllUsersToFirestore,
+  fetchUserLessonPlansFromFirestore,
+  saveLessonPlanToFirestore,
+  deleteLessonPlanFromFirestore,
+  importLessonPlansToFirestore,
+  getUserApiKeyFromFirestore,
+} from './firebase';
+import { RefreshCw, CloudCheck } from 'lucide-react';
 
 const DEFAULT_USERS: UserProfile[] = [
   {
@@ -238,39 +248,76 @@ export default function App() {
     return DEFAULT_USERS;
   });
 
-  // Current Active User state (session-only, resets to default on refresh/new session)
+  // Current Active User state
   const [currentUser, setCurrentUser] = useState<UserProfile>(DEFAULT_USERS[0]);
 
   const [isSwitchUserOpen, setIsSwitchUserOpen] = useState<boolean>(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
   const [planToDelete, setPlanToDelete] = useState<FullLessonPlan | null>(null);
 
-  const [lessonPlans, setLessonPlans] = useState<FullLessonPlan[]>(() => {
-    const local = localStorage.getItem('ai_lesson_plans');
-    if (local) {
-      try {
-        return JSON.parse(local);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return [INITIAL_SAMPLE_PLAN];
-  });
-
+  const [lessonPlans, setLessonPlans] = useState<FullLessonPlan[]>([INITIAL_SAMPLE_PLAN]);
   const [selectedPlan, setSelectedPlan] = useState<FullLessonPlan>(INITIAL_SAMPLE_PLAN);
+  const [isDataLoading, setIsDataLoading] = useState<boolean>(true);
 
-  // Sync users & current user to local storage
+  // Sync users list to local storage
   useEffect(() => {
     localStorage.setItem('ai_planner_users_v3', JSON.stringify(users));
   }, [users]);
 
-  // Set active user ID for user-scoped API key management
+  // Initial Mount: Sync registered users list with Cloud Firestore
   useEffect(() => {
-    setActiveUserId(currentUser.id);
-    localStorage.removeItem('ai_planner_current_user_v3');
-  }, [currentUser]);
+    let isMounted = true;
+    syncUsersWithFirestore(DEFAULT_USERS).then((syncedUsers) => {
+      if (isMounted && Array.isArray(syncedUsers) && syncedUsers.length > 0) {
+        setUsers(syncedUsers);
+        const matched = syncedUsers.find((u) => u.id === currentUser.id);
+        if (matched) setCurrentUser(matched);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-  // Sync lesson plans to local storage
+  // When currentUser changes: Load that user's API Key & Lesson Plans from Cloud Firestore
+  useEffect(() => {
+    let isMounted = true;
+    setIsDataLoading(true);
+    setActiveUserId(currentUser.id);
+
+    async function loadUserData() {
+      try {
+        // Fetch user-scoped API key from Cloud Firestore
+        const remoteApiKey = await getUserApiKeyFromFirestore(currentUser.id);
+        if (remoteApiKey) {
+          setUserApiKey(remoteApiKey, currentUser.id);
+        }
+
+        // Fetch user-scoped lesson plans from Cloud Firestore
+        const remotePlans = await fetchUserLessonPlansFromFirestore(currentUser.id, INITIAL_SAMPLE_PLAN);
+        if (isMounted) {
+          setLessonPlans(remotePlans);
+          if (remotePlans.length > 0) {
+            setSelectedPlan(remotePlans[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading user data from Cloud Firestore:', err);
+      } finally {
+        if (isMounted) {
+          setIsDataLoading(false);
+        }
+      }
+    }
+
+    loadUserData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser.id]);
+
+  // Sync lesson plans to local storage as fallback
   useEffect(() => {
     localStorage.setItem('ai_lesson_plans', JSON.stringify(lessonPlans));
   }, [lessonPlans]);
@@ -284,16 +331,23 @@ export default function App() {
     }
   }, [darkMode]);
 
+  const handleUpdateUsers = (updatedUsers: UserProfile[]) => {
+    setUsers(updatedUsers);
+    saveAllUsersToFirestore(updatedUsers);
+  };
+
   const handlePlanGenerated = (newPlan: FullLessonPlan) => {
     setLessonPlans([newPlan, ...lessonPlans]);
     setSelectedPlan(newPlan);
     setActiveTab('editor');
+    saveLessonPlanToFirestore(newPlan, currentUser.id);
   };
 
   const handleSavePlan = (updatedPlan: FullLessonPlan) => {
     const updated = lessonPlans.map((p) => (p.id === updatedPlan.id ? updatedPlan : p));
     setLessonPlans(updated);
     setSelectedPlan(updatedPlan);
+    saveLessonPlanToFirestore(updatedPlan, currentUser.id);
   };
 
   const handleSelectPlan = (plan: FullLessonPlan) => {
@@ -304,7 +358,7 @@ export default function App() {
   const handleDuplicatePlan = (plan: FullLessonPlan) => {
     const duplicated: FullLessonPlan = {
       ...plan,
-      id: `lp-${Date.now()}`,
+      id: `lp-${currentUser.id}-${Date.now()}`,
       info: {
         ...plan.info,
         lessonTitle: `${plan.info.lessonTitle} (Bản sao)`,
@@ -315,6 +369,7 @@ export default function App() {
     setLessonPlans([duplicated, ...lessonPlans]);
     setSelectedPlan(duplicated);
     setActiveTab('editor');
+    saveLessonPlanToFirestore(duplicated, currentUser.id);
   };
 
   const handleDeletePlan = (id: string) => {
@@ -326,12 +381,14 @@ export default function App() {
     if (!planToDelete) return;
     const remaining = lessonPlans.filter((p) => p.id !== planToDelete.id);
     setLessonPlans(remaining);
+    deleteLessonPlanFromFirestore(planToDelete.id);
+
     if (remaining.length > 0) {
       if (selectedPlan?.id === planToDelete.id) {
         setSelectedPlan(remaining[0]);
       }
     } else {
-      setLessonPlans([INITIAL_SAMPLE_PLAN]);
+      setLessonPlans([]);
       setSelectedPlan(INITIAL_SAMPLE_PLAN);
     }
     setPlanToDelete(null);
@@ -342,6 +399,7 @@ export default function App() {
     if (imported.length > 0) {
       setSelectedPlan(imported[0]);
     }
+    importLessonPlansToFirestore(imported, currentUser.id);
   };
 
   return (
@@ -366,6 +424,29 @@ export default function App() {
         />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+          {/* Cloud Sync Status Banner */}
+          <div className="mb-4 flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-xs shadow-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
+                Tài khoản active: <strong className="text-blue-600 dark:text-blue-400 font-bold">{currentUser.name}</strong> ({currentUser.school})
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-medium">
+              {isDataLoading ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                  <span>Đang đồng bộ dữ liệu Cloud...</span>
+                </>
+              ) : (
+                <>
+                  <CloudCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Đã đồng bộ Cloud Firestore</span>
+                </>
+              )}
+            </div>
+          </div>
+
           {activeTab === 'dashboard' && (
             <DashboardView
               lessonPlans={lessonPlans}
@@ -412,7 +493,7 @@ export default function App() {
             <AdminManagementView
               currentUser={currentUser}
               users={users}
-              onUpdateUsers={setUsers}
+              onUpdateUsers={handleUpdateUsers}
               onSwitchUser={(u) => setCurrentUser(u)}
               lessonPlans={lessonPlans}
               onImportPlans={handleImportPlans}
