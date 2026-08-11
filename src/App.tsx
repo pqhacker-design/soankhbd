@@ -17,12 +17,43 @@ import { FullLessonPlan, UserProfile } from './types';
 const DEFAULT_USERS: UserProfile[] = [
   {
     id: 'usr-admin',
-    name: 'Quản Trị Viên Hệ Thống (Admin)',
+    name: 'Thầy Nguyễn Văn An',
     email: 'admin@nguyendu.edu.vn',
     password: '123456',
     role: 'Admin',
     school: 'Trường THCS Nguyễn Du',
+    department: 'Tổ Toán - Tự Nhiên',
     avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+  },
+  {
+    id: 'usr-mai',
+    name: 'Cô Trần Thị Mai',
+    email: 'tranthimai@lequydon.edu.vn',
+    password: '123456',
+    role: 'Giáo viên',
+    school: 'Trường THPT Lê Quý Đôn',
+    department: 'Tổ Ngữ Văn',
+    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
+  },
+  {
+    id: 'usr-nam',
+    name: 'Thầy Lê Văn Nam',
+    email: 'levannam@chuvanan.edu.vn',
+    password: '123456',
+    role: 'Giáo viên',
+    school: 'Trường THCS Chu Văn An',
+    department: 'Tổ Khoa Học Tự Nhiên',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+  },
+  {
+    id: 'usr-ha',
+    name: 'Cô Phạm Thanh Hà',
+    email: 'phamthanhha@nguyenbinhkhiem.edu.vn',
+    password: '123456',
+    role: 'Giáo viên',
+    school: 'Trường Tiểu Học Nguyễn Bỉnh Khiêm',
+    department: 'Tổ Khối 4 - 5',
+    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150',
   },
 ];
 
@@ -353,13 +384,17 @@ export default function App() {
           )}
 
           {activeTab === 'planner' && (
-            <PlannerWizard onPlanGenerated={handlePlanGenerated} />
+            <PlannerWizard
+              currentUser={currentUser}
+              onPlanGenerated={handlePlanGenerated}
+            />
           )}
 
           {activeTab === 'editor' && (
             <LessonPlanEditorView
               plan={selectedPlan}
               onSavePlan={handleSavePlan}
+              currentUser={currentUser}
             />
           )}
 
