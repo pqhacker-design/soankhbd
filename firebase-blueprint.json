@@ -1,0 +1,49 @@
+{
+  "entities": {
+    "users": {
+      "title": "User Profiles",
+      "description": "Registered teacher profiles with account details",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "password": { "type": "string" },
+        "role": { "type": "string" },
+        "school": { "type": "string" },
+        "department": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "geminiApiKey": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "email"]
+    },
+    "lesson_plans": {
+      "title": "Lesson Plans",
+      "description": "User created lesson plans synchronized across devices",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "level": { "type": "string" },
+        "subject": { "type": "string" },
+        "grade": { "type": "string" },
+        "textbook": { "type": "string" }
+      },
+      "required": ["id", "userId"]
+    },
+    "materials": {
+      "title": "Teaching Materials",
+      "description": "Generated materials, quizzes and presentation slides for teachers",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "subject": { "type": "string" },
+        "grade": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId"]
+    }
+  }
+}
