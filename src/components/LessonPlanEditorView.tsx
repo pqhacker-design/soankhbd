@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileText,
   Download,
@@ -23,8 +23,11 @@ import {
   Check,
   Presentation,
   FileCode,
+  Building2,
+  UserCheck,
+  BookOpen,
 } from 'lucide-react';
-import { FullLessonPlan, LessonActivity, QuizQuestion, Worksheet } from '../types';
+import { FullLessonPlan, LessonActivity, QuizQuestion, Worksheet, UserProfile } from '../types';
 import { exportLessonPlanToDocx } from '../utils/docxExporter';
 import { buildNotebookLMPrompt } from '../utils/notebooklmPromptBuilder';
 import { getApiKeyHeaders } from '../utils/apiHelper';
@@ -33,11 +36,13 @@ import { MathText } from './MathText';
 interface LessonPlanEditorViewProps {
   plan: FullLessonPlan;
   onSavePlan: (updatedPlan: FullLessonPlan) => void;
+  currentUser?: UserProfile;
 }
 
 export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({
   plan,
   onSavePlan,
+  currentUser,
 }) => {
   const [currentPlan, setCurrentPlan] = useState<FullLessonPlan>(plan);
   const [layoutFormat, setLayoutFormat] = useState<'standard' | 'two_column' | 'three_column'>(
@@ -47,12 +52,19 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({
     'preview' | 'edit' | 'activities' | 'materials' | 'notebooklm' | 'assessment'
   >('preview');
 
+  // Sync state when plan prop changes
+  useEffect(() => {
+    setCurrentPlan(plan);
+    setLayoutFormat(plan.layoutFormat || 'standard');
+  }, [plan]);
+
   const handleLayoutFormatChange = (fmt: 'standard' | 'two_column' | 'three_column') => {
     setLayoutFormat(fmt);
     const updated = { ...currentPlan, layoutFormat: fmt };
     setCurrentPlan(updated);
     onSavePlan(updated);
   };
+
   const [copied, setCopied] = useState<boolean>(false);
   const [copiedNotebookLMPrompt, setCopiedNotebookLMPrompt] = useState<boolean>(false);
   const [refiningActivityId, setRefiningActivityId] = useState<string | null>(null);
@@ -64,12 +76,31 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({
   // Build the NotebookLM prompt dynamically from current plan
   const notebookLMPromptText = buildNotebookLMPrompt(currentPlan);
 
+  // Quick apply current user's school, name, and department to this plan
+  const handleApplyCurrentUser = () => {
+    if (!currentUser) return;
+    const updatedPlan: FullLessonPlan = {
+      ...currentPlan,
+      info: {
+        ...currentPlan.info,
+        schoolName: currentUser.school || currentPlan.info.schoolName,
+        teacherName: currentUser.name || currentPlan.info.teacherName,
+        departmentName: currentUser.department || currentPlan.info.departmentName || 'Tổ Chuyên Môn',
+      },
+    };
+    setCurrentPlan(updatedPlan);
+    onSavePlan(updatedPlan);
+    alert(`Đã cập nhật Tên Trường ("${currentUser.school}") và Họ Tên Giáo Viên ("${currentUser.name}") vào Kế hoạch bài dạy thành công!`);
+  };
+
   // Copy full lesson text to clipboard
   const handleCopyText = () => {
     const textToCopy = `
 KẾ HOẠCH BÀI DẠY (GIÁO ÁN)
 Bài: ${currentPlan.info.lessonTitle.toUpperCase()}
 Môn: ${currentPlan.subject} - ${currentPlan.grade} (${currentPlan.textbook})
+Trường: ${currentPlan.info.schoolName || ''}
+Giáo viên: ${currentPlan.info.teacherName || ''}
 
 I. MỤC TIÊU:
 1. Yêu cầu cần đạt:
@@ -112,17 +143,6 @@ HOẠT ĐỘNG ${i + 1}: ${act.name.toUpperCase()} (${act.duration})
     navigator.clipboard.writeText(notebookLMPromptText);
     setCopiedNotebookLMPrompt(true);
     setTimeout(() => setCopiedNotebookLMPrompt(false), 2500);
-  };
-
-  // Download NotebookLM Prompt as .txt file
-  const handleDownloadNotebookLMPromptText = () => {
-    const element = document.createElement('a');
-    const file = new Blob([notebookLMPromptText], { type: 'text/plain;charset=utf-8' });
-    element.href = URL.createObjectURL(file);
-    element.download = `NotebookLM_Prompt_${currentPlan.info.lessonTitle.replace(/\s+/g, '_')}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
   };
 
   // AI Refine Activity
@@ -213,12 +233,24 @@ HOẠT ĐỘNG ${i + 1}: ${act.name.toUpperCase()} (${act.duration})
       {/* Top Toolbar */}
       <div className="bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-6 saas-card-shadow flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
             <span className="bg-[#EAF3F8] dark:bg-[#244F70]/30 text-[#244F70] dark:text-blue-300 px-2.5 py-0.5 rounded-full border border-[#244F70]/20">
               {currentPlan.subject} - {currentPlan.grade}
             </span>
             <span>•</span>
             <span>{currentPlan.textbook}</span>
+            {currentPlan.info.schoolName && (
+              <>
+                <span>•</span>
+                <span className="text-slate-700 dark:text-slate-300 font-semibold">{currentPlan.info.schoolName}</span>
+              </>
+            )}
+            {currentPlan.info.teacherName && (
+              <>
+                <span>•</span>
+                <span className="text-[#244F70] dark:text-blue-300 font-bold">GV: {currentPlan.info.teacherName}</span>
+              </>
+            )}
           </div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white mt-1.5">
             {currentPlan.info.lessonTitle}
@@ -226,6 +258,17 @@ HOẠT ĐỘNG ${i + 1}: ${act.name.toUpperCase()} (${act.duration})
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {currentUser && (
+            <button
+              onClick={handleApplyCurrentUser}
+              className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 font-bold text-xs px-3.5 py-2.5 rounded-xl border border-blue-200 dark:border-blue-800 transition-all active:scale-95"
+              title={`Cập nhật đơn vị ("${currentUser.school}") & GV ("${currentUser.name}")`}
+            >
+              <UserCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              Đổi sang GV: {currentUser.name}
+            </button>
+          )}
+
           <button
             onClick={() => exportLessonPlanToDocx(currentPlan)}
             className="flex items-center gap-1.5 bg-[#244F70] hover:bg-[#193B55] text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all active:scale-95"
@@ -252,11 +295,11 @@ HOẠT ĐỘNG ${i + 1}: ${act.name.toUpperCase()} (${act.duration})
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs Header */}
       <div className="flex items-center gap-2 border-b border-slate-200/80 dark:border-slate-800 overflow-x-auto pb-2">
         {[
           { id: 'preview', label: 'Bản In Giáo Án (CV 5512)', icon: Eye },
-          { id: 'edit', label: 'Chỉnh Sửa Trực Tiếp', icon: Edit3 },
+          { id: 'edit', label: 'Chỉnh Sửa Thông Tin & Đơn Vị', icon: Edit3 },
           { id: 'activities', label: '5 Hoạt Động Bài Dạy', icon: Layers },
           { id: 'materials', label: 'Phiếu Học Tập & Quiz', icon: FileSpreadsheet },
           { id: 'notebooklm', label: 'Prompt NotebookLM & Slide', icon: Tv },
@@ -318,6 +361,26 @@ HOẠT ĐỘNG ${i + 1}: ${act.name.toUpperCase()} (${act.duration})
           id="printable-lesson-plan"
           className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 sm:p-10 saas-card-shadow space-y-8 text-slate-800 dark:text-slate-200 font-sans leading-relaxed"
         >
+          {/* Active Account Sync Banner */}
+          {currentUser && (
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-[#EAF3F8] dark:bg-[#244F70]/20 p-3 rounded-2xl border border-[#244F70]/20 text-xs text-[#244F70] dark:text-blue-300">
+              <div className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4 shrink-0 text-[#244F70]" />
+                <span>
+                  Tài khoản đăng nhập hiện tại: <strong className="font-bold">{currentUser.name}</strong> ({currentUser.school} - {currentUser.department || 'Tổ chuyên môn'})
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleApplyCurrentUser}
+                className="bg-[#244F70] hover:bg-[#193B55] text-white font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-xs transition-all active:scale-95 flex items-center gap-1.5"
+                title="Áp dụng tên trường và họ tên giáo viên của tài khoản đang đăng nhập vào giáo án này"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Áp dụng tên đơn vị &amp; giáo viên cho giáo án này
+              </button>
+            </div>
+          )}
+
           {/* Header Metadata Table */}
           <div className="border-b border-slate-200 dark:border-slate-700 pb-4 grid grid-cols-2 text-xs font-sans">
             <div>
@@ -563,7 +626,433 @@ HOẠT ĐỘNG ${i + 1}: ${act.name.toUpperCase()} (${act.duration})
         </div>
       )}
 
-      {/* OTHER TABS (Edit, Activities, Materials, NotebookLM, Assessment) preserved functionality */}
+      {/* TAB 2: EDIT DIRECTLY */}
+      {activeTab === 'edit' && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 sm:p-8 saas-card-shadow space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-[#244F70] dark:text-blue-400" />
+                Chỉnh Sửa Thông Tin Đơn Vị &amp; Nội Dung Giáo Án
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Chỉnh sửa trực tiếp tên trường, họ tên giáo viên, tổ chuyên môn và chi tiết bài học.
+              </p>
+            </div>
+
+            {currentUser && (
+              <button
+                type="button"
+                onClick={handleApplyCurrentUser}
+                className="bg-[#244F70] hover:bg-[#193B55] text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 shrink-0 active:scale-95"
+              >
+                <RefreshCw className="w-4 h-4" /> Đồng bộ tên GV: {currentUser.name} ({currentUser.school})
+              </button>
+            )}
+          </div>
+
+          {/* Section: Unit & Teacher Metadata */}
+          <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-4">
+            <h3 className="text-xs font-bold text-[#244F70] dark:text-blue-300 uppercase tracking-wide flex items-center gap-2">
+              <Building2 className="w-4 h-4" /> Thông Tin Đơn Vị Dạy Học &amp; Giáo Viên Soạn Bài
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Tên Trường / Đơn Vị <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={currentPlan.info.schoolName || ''}
+                  onChange={(e) => {
+                    const updated = {
+                      ...currentPlan,
+                      info: { ...currentPlan.info, schoolName: e.target.value },
+                    };
+                    setCurrentPlan(updated);
+                    onSavePlan(updated);
+                  }}
+                  placeholder="Ví dụ: Trường THCS Nguyễn Du"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#244F70]/20"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Tổ Chuyên Môn
+                </label>
+                <input
+                  type="text"
+                  value={currentPlan.info.departmentName || ''}
+                  onChange={(e) => {
+                    const updated = {
+                      ...currentPlan,
+                      info: { ...currentPlan.info, departmentName: e.target.value },
+                    };
+                    setCurrentPlan(updated);
+                    onSavePlan(updated);
+                  }}
+                  placeholder="Ví dụ: Tổ Toán - Tự Nhiên"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#244F70]/20"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Họ &amp; Tên Giáo Viên Soạn <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={currentPlan.info.teacherName || ''}
+                  onChange={(e) => {
+                    const updated = {
+                      ...currentPlan,
+                      info: { ...currentPlan.info, teacherName: e.target.value },
+                    };
+                    setCurrentPlan(updated);
+                    onSavePlan(updated);
+                  }}
+                  placeholder="Ví dụ: Nguyễn Văn An"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#244F70]/20"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs pt-1">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Lớp Giảng Dạy
+                </label>
+                <input
+                  type="text"
+                  value={currentPlan.info.classGroup || ''}
+                  onChange={(e) => {
+                    const updated = {
+                      ...currentPlan,
+                      info: { ...currentPlan.info, classGroup: e.target.value },
+                    };
+                    setCurrentPlan(updated);
+                    onSavePlan(updated);
+                  }}
+                  placeholder="Ví dụ: Lớp 7A1"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#244F70]/20"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Ngày Dạy
+                </label>
+                <input
+                  type="date"
+                  value={currentPlan.info.date || ''}
+                  onChange={(e) => {
+                    const updated = {
+                      ...currentPlan,
+                      info: { ...currentPlan.info, date: e.target.value },
+                    };
+                    setCurrentPlan(updated);
+                    onSavePlan(updated);
+                  }}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#244F70]/20"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Tiết Phân Phối Chương Trình
+                </label>
+                <input
+                  type="text"
+                  value={currentPlan.info.periodNumber || ''}
+                  onChange={(e) => {
+                    const updated = {
+                      ...currentPlan,
+                      info: { ...currentPlan.info, periodNumber: e.target.value },
+                    };
+                    setCurrentPlan(updated);
+                    onSavePlan(updated);
+                  }}
+                  placeholder="Ví dụ: Tiết 28"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#244F70]/20"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section: Lesson Title & Topic */}
+          <div className="space-y-4 text-xs">
+            <h3 className="text-xs font-bold text-[#244F70] dark:text-blue-300 uppercase tracking-wide flex items-center gap-2">
+              <BookOpen className="w-4 h-4" /> Tên Bài Học &amp; Chủ Đề
+            </h3>
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Tên Bài Học / Tiêu Đề Bài Dạy
+              </label>
+              <input
+                type="text"
+                value={currentPlan.info.lessonTitle}
+                onChange={(e) => {
+                  const updated = {
+                    ...currentPlan,
+                    info: { ...currentPlan.info, lessonTitle: e.target.value },
+                  };
+                  setCurrentPlan(updated);
+                  onSavePlan(updated);
+                }}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#244F70]/20"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Chương / Chủ Đề Trong Chương Trình
+              </label>
+              <input
+                type="text"
+                value={currentPlan.info.topic}
+                onChange={(e) => {
+                  const updated = {
+                    ...currentPlan,
+                    info: { ...currentPlan.info, topic: e.target.value },
+                  };
+                  setCurrentPlan(updated);
+                  onSavePlan(updated);
+                }}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#244F70]/20"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: ACTIVITIES */}
+      {activeTab === 'activities' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 saas-card-shadow flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Layers className="w-5 h-5 text-[#244F70] dark:text-blue-400" />
+                Quản Lý 5 Hoạt Động Bài Dạy Theo CV 5512
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Tinh chỉnh, phân bổ hoặc yêu cầu AI tối ưu nội dung từng hoạt động.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {currentPlan.activities.map((act, index) => (
+              <div key={act.id} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 saas-card-shadow space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <span className="font-bold text-xs text-[#244F70] dark:text-blue-300 uppercase tracking-wide">
+                    Hoạt động {index + 1}: {act.name} ({act.duration})
+                  </span>
+                  <button
+                    onClick={() => setRefiningActivityId(refiningActivityId === act.id ? null : act.id)}
+                    className="flex items-center gap-1.5 text-xs font-bold text-[#244F70] dark:text-blue-400 bg-[#EAF3F8] dark:bg-[#244F70]/30 px-3 py-1.5 rounded-xl border border-[#244F70]/20 hover:bg-[#244F70] hover:text-white transition-all"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" /> AI Tinh Chỉnh Hoạt Động
+                  </button>
+                </div>
+
+                {refiningActivityId === act.id && (
+                  <div className="bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-xl p-3.5 space-y-2 animate-fadeIn">
+                    <p className="text-xs font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-amber-500" /> Nhập yêu cầu tinh chỉnh bằng AI cho hoạt động này:
+                    </p>
+                    <input
+                      type="text"
+                      value={refineInstruction}
+                      onChange={(e) => setRefineInstruction(e.target.value)}
+                      placeholder="Ví dụ: Lồng ghép trò chơi Kahoot, bổ sung thêm ví dụ thực tế..."
+                      className="w-full bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => setRefiningActivityId(null)}
+                        className="px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        onClick={() => handleRefineActivity(act)}
+                        disabled={isRefining}
+                        className="bg-[#244F70] hover:bg-[#193B55] text-white text-xs font-bold px-4 py-1.5 rounded-xl flex items-center gap-1.5"
+                      >
+                        {isRefining ? 'Đang tinh chỉnh...' : 'Xác Nhận Refine'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300">a) Mục tiêu:</label>
+                    <p className="mt-1 text-slate-600 dark:text-slate-400">{act.objective}</p>
+                  </div>
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300">b) Nội dung:</label>
+                    <p className="mt-1 text-slate-600 dark:text-slate-400">{act.content}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: MATERIALS */}
+      {activeTab === 'materials' && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 sm:p-8 saas-card-shadow space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-[#244F70] dark:text-blue-400" />
+                Phiếu Học Tập &amp; Ngân Hàng Quiz Trắc Nghiệm 4 Mức Độ
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Sinh tự động Phiếu học tập, Trắc nghiệm 4 cấp độ tư duy (Nhận biết, Thông hiểu, Vận dụng, Vận dụng cao).
+              </p>
+            </div>
+            <button
+              onClick={handleGenerateMaterials}
+              disabled={isGeneratingMaterials}
+              className="bg-[#244F70] hover:bg-[#193B55] text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2 shrink-0"
+            >
+              <Wand2 className="w-4 h-4" /> {isGeneratingMaterials ? 'Đang tạo bằng AI...' : 'Tạo Học Liệu Mới'}
+            </button>
+          </div>
+
+          {currentPlan.supplementaryMaterials?.quizQuestions && currentPlan.supplementaryMaterials.quizQuestions.length > 0 ? (
+            <div className="space-y-4">
+              <h3 className="font-bold text-xs text-[#244F70] dark:text-blue-300 uppercase tracking-wide">
+                Bộ Câu Hỏi Trắc Nghiệm Tự Động ({currentPlan.supplementaryMaterials.quizQuestions.length} câu)
+              </h3>
+              <div className="space-y-3">
+                {currentPlan.supplementaryMaterials.quizQuestions.map((q, i) => (
+                  <div key={q.id || i} className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        Câu {i + 1}: <MathText text={q.question} />
+                      </span>
+                      <span className="bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 font-bold px-2 py-0.5 rounded text-[10px]">
+                        {q.level}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-2">
+                      {q.options.map((opt, optIdx) => (
+                        <div
+                          key={optIdx}
+                          className={`p-1.5 rounded-lg border text-[11px] ${
+                            optIdx === q.correctAnswer
+                              ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-bold'
+                              : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          {String.fromCharCode(65 + optIdx)}. <MathText text={opt} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 space-y-3">
+              <Sparkles className="w-8 h-8 text-[#244F70] mx-auto" />
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                Chưa có Bộ Quiz &amp; Phiếu Học Tập bổ trợ cho bài dạy này.
+              </p>
+              <button
+                onClick={handleGenerateMaterials}
+                disabled={isGeneratingMaterials}
+                className="bg-[#244F70] hover:bg-[#193B55] text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-all inline-flex items-center gap-2"
+              >
+                <Wand2 className="w-4 h-4" /> Bấm Để AI Sinh Học Liệu
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 5: NOTEBOOKLM & SLIDES */}
+      {activeTab === 'notebooklm' && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 sm:p-8 saas-card-shadow space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Tv className="w-5 h-5 text-[#244F70] dark:text-blue-400" />
+                Prompt Xuất NotebookLM &amp; Khung Trình Chiếu PowerPoint
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Sao chép Prompt chuẩn hóa để nạp vào NotebookLM tạo Audio Podcast hoặc xuất Bài giảng Slide.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCopyNotebookLMPrompt}
+                className="bg-[#244F70] hover:bg-[#193B55] text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-1.5"
+              >
+                <Copy className="w-4 h-4" /> {copiedNotebookLMPrompt ? 'Đã Chép Prompt!' : 'Sao Chép Prompt NotebookLM'}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-slate-900 text-slate-100 p-4 rounded-2xl font-mono text-xs overflow-x-auto max-h-[400px] leading-relaxed select-all">
+            <pre className="whitespace-pre-wrap">{notebookLMPromptText}</pre>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 6: ASSESSMENT */}
+      {activeTab === 'assessment' && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 sm:p-8 saas-card-shadow space-y-6">
+          <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Award className="w-5 h-5 text-[#244F70] dark:text-blue-400" />
+              Bảng Rubric Đánh Giá Theo Thông Tư 22 / 27
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Hình thức đánh giá thường xuyên &amp; tiêu chí Rubrics 4 mức độ tiêu chuẩn.
+            </p>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs space-y-1">
+            <p className="font-bold text-slate-900 dark:text-white">Phương thức đánh giá:</p>
+            <p className="text-slate-600 dark:text-slate-400">{currentPlan.assessment.type}</p>
+            <p className="text-slate-600 dark:text-slate-400 pt-1">{currentPlan.assessment.details}</p>
+          </div>
+
+          {currentPlan.assessment.rubrics && currentPlan.assessment.rubrics.length > 0 && (
+            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden text-xs">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#244F70] text-white font-bold">
+                    <th className="p-2.5 w-1/5 border-r border-[#193B55]">Tiêu chí</th>
+                    <th className="p-2.5 w-1/5 border-r border-[#193B55]">Mức 1 (Cần cố gắng)</th>
+                    <th className="p-2.5 w-1/5 border-r border-[#193B55]">Mức 2 (Đạt)</th>
+                    <th className="p-2.5 w-1/5 border-r border-[#193B55]">Mức 3 (Tốt)</th>
+                    <th className="p-2.5 w-1/5">Mức 4 (Xuất sắc)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-900">
+                  {currentPlan.assessment.rubrics.map((r, i) => (
+                    <tr key={i}>
+                      <td className="p-2.5 font-bold border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">{r.criteria}</td>
+                      <td className="p-2.5 border-r border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">{r.level1}</td>
+                      <td className="p-2.5 border-r border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">{r.level2}</td>
+                      <td className="p-2.5 border-r border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">{r.level3}</td>
+                      <td className="p-2.5 text-slate-600 dark:text-slate-400 bg-emerald-50/30 dark:bg-emerald-950/20 font-medium">{r.level4}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
