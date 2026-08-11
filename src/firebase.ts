@@ -39,36 +39,43 @@ const LESSON_PLANS_COLLECTION = 'lesson_plans';
  */
 export async function syncUsersWithFirestore(defaultUsers: UserProfile[]): Promise<UserProfile[]> {
   try {
+    const demoEmails = [
+      'admin@nguyendu.edu.vn',
+      'tranthimai@lequydon.edu.vn',
+      'levannam@chuvanan.edu.vn',
+      'phamthanhha@nguyenbinhkhiem.edu.vn',
+    ];
+
     const querySnapshot = await getDocs(collection(db, USERS_COLLECTION));
-    if (querySnapshot.empty) {
-      // Seed default users to Firestore
-      for (const u of defaultUsers) {
-        await setDoc(doc(db, USERS_COLLECTION, u.id), {
-          ...u,
-          updatedAt: new Date().toISOString(),
-        });
+    
+    // Clean up old demo users from Firestore if found
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.email && demoEmails.includes(data.email.toLowerCase())) {
+        deleteDoc(doc(db, USERS_COLLECTION, docSnap.id)).catch(console.error);
       }
-      return defaultUsers;
-    }
+    });
 
     const fetchedUsers: UserProfile[] = [];
     querySnapshot.forEach((docSnap) => {
       const data = docSnap.data();
-      fetchedUsers.push({
-        id: data.id || docSnap.id,
-        name: data.name || '',
-        email: data.email || '',
-        password: data.password || '123456',
-        role: data.role || 'Giáo viên',
-        school: data.school || '',
-        department: data.department || '',
-        avatarUrl: data.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      });
+      if (data.email && !demoEmails.includes(data.email.toLowerCase())) {
+        fetchedUsers.push({
+          id: data.id || docSnap.id,
+          name: data.name || '',
+          email: data.email || '',
+          password: data.password || '123456',
+          role: data.role || 'Giáo viên',
+          school: data.school || '',
+          department: data.department || '',
+          avatarUrl: data.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+        });
+      }
     });
 
-    // If default users are missing from fetched list, merge them
+    // Ensure all default users exist in Firestore
     for (const defU of defaultUsers) {
-      if (!fetchedUsers.some((u) => u.id === defU.id)) {
+      if (!fetchedUsers.some((u) => u.email.toLowerCase() === defU.email.toLowerCase())) {
         await setDoc(doc(db, USERS_COLLECTION, defU.id), {
           ...defU,
           updatedAt: new Date().toISOString(),
