@@ -8,6 +8,7 @@ import {
   KeyRound,
   PlusCircle,
   GraduationCap,
+  LogOut,
 } from 'lucide-react';
 import { UserProfile } from '../types';
 
@@ -20,6 +21,7 @@ interface NavbarProps {
   onNewPlan: () => void;
   onOpenSwitchUser: () => void;
   onOpenApiKeyModal: () => void;
+  onLogout?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -31,6 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNewPlan,
   onOpenSwitchUser,
   onOpenApiKeyModal,
+  onLogout,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-white/90 dark:bg-[#0F172A]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
@@ -93,7 +96,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* User Profile Chip */}
-            <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-1.5 pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800">
               <button
                 onClick={onOpenSwitchUser}
                 title="Đăng nhập / Chuyển tài khoản giáo viên"
@@ -117,6 +120,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span className="hidden sm:inline">Đổi TK</span>
                 </div>
               </button>
+
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  title="Đăng xuất khỏi hệ thống"
+                  className="p-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 border border-slate-200 dark:border-slate-700 transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
