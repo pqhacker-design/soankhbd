@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
   BookOpen,
@@ -23,6 +23,7 @@ import {
   Loader2,
   Building2,
   FileSpreadsheet,
+  UserCheck,
 } from 'lucide-react';
 import {
   EducationLevel,
@@ -30,6 +31,7 @@ import {
   Subject,
   TextbookSeries,
   FullLessonPlan,
+  UserProfile,
 } from '../types';
 import {
   EDUCATION_LEVELS,
@@ -50,10 +52,11 @@ import {
 import { getApiKeyHeaders } from '../utils/apiHelper';
 
 interface PlannerWizardProps {
+  currentUser?: UserProfile;
   onPlanGenerated: (plan: FullLessonPlan) => void;
 }
 
-export const PlannerWizard: React.FC<PlannerWizardProps> = ({ onPlanGenerated }) => {
+export const PlannerWizard: React.FC<PlannerWizardProps> = ({ currentUser, onPlanGenerated }) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generationProgress, setGenerationProgress] = useState<string>('');
@@ -71,10 +74,25 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ onPlanGenerated })
   const [duration, setDuration] = useState<string>('45 phút (1 tiết)');
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [classGroup, setClassGroup] = useState<string>('7A1');
-  const [schoolName, setSchoolName] = useState<string>('Trường THCS Nguyễn Du');
-  const [teacherName, setTeacherName] = useState<string>('Nguyễn Văn An');
-  const [departmentName, setDepartmentName] = useState<string>('Tổ Toán - Tự Nhiên');
+  const [schoolName, setSchoolName] = useState<string>(currentUser?.school || 'Trường THCS Nguyễn Du');
+  const [teacherName, setTeacherName] = useState<string>(currentUser?.name || 'Nguyễn Văn An');
+  const [departmentName, setDepartmentName] = useState<string>(currentUser?.department || 'Tổ Toán - Tự Nhiên');
   const [layoutFormat, setLayoutFormat] = useState<'standard' | 'two_column' | 'three_column'>('standard');
+
+  // Auto-sync school, teacher, and department name whenever logged-in user changes
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.school) {
+        setSchoolName(currentUser.school);
+      }
+      if (currentUser.name) {
+        setTeacherName(currentUser.name);
+      }
+      if (currentUser.department) {
+        setDepartmentName(currentUser.department);
+      }
+    }
+  }, [currentUser]);
 
   // AI Document Extraction State
   const [isAnalyzingDoc, setIsAnalyzingDoc] = useState<boolean>(false);
@@ -561,10 +579,18 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ onPlanGenerated })
 
           {/* Thông tin Trường, Giáo viên */}
           <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-3">
-            <h3 className="text-xs font-bold text-[#244F70] dark:text-blue-300 uppercase tracking-wide flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-[#244F70]" />
-              Thông Tin Đơn Vị &amp; Giáo Viên
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="text-xs font-bold text-[#244F70] dark:text-blue-300 uppercase tracking-wide flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-[#244F70]" />
+                Thông Tin Đơn Vị &amp; Giáo Viên
+              </h3>
+              {currentUser && (
+                <span className="text-[11px] bg-[#EAF3F8] dark:bg-[#244F70]/30 text-[#244F70] dark:text-blue-300 font-medium px-2.5 py-1 rounded-lg border border-[#244F70]/20 flex items-center gap-1">
+                  <UserCheck className="w-3.5 h-3.5 text-[#244F70] shrink-0" />
+                  Đồng bộ theo tài khoản: <strong className="font-bold">{currentUser.name}</strong> ({currentUser.school})
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -1041,7 +1067,7 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ onPlanGenerated })
               >
                 {SAMPLE_PLAN_EDIT_MODES.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.label}
+                    {m.title}
                   </option>
                 ))}
               </select>
