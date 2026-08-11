@@ -4,15 +4,50 @@
   :root {
     --font-serif: 'Newsreader', Georgia, Cambria, "Times New Roman", Times, serif;
     --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    
+    /* Modern EdTech SaaS Palette */
+    --color-primary: #244F70;
+    --color-primary-dark: #193B55;
+    --color-primary-light: #EAF3F8;
+    --color-ai: #6C63FF;
+    --color-ai-light: #F0EEFF;
+    --color-bg-light: #F6F8FB;
+    --color-surface-light: #FFFFFF;
+    
+    --color-bg-dark: #0F172A;
+    --color-surface-dark: #1E293B;
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: #FDFCFB;
-    color: #1C1917;
+    background-color: var(--color-bg-light);
+    color: #1F2937;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .dark body {
+    background-color: var(--color-bg-dark);
+    color: #F8FAFC;
   }
 }
 
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+/* Typography Utility Classes */
 .font-serif, .font-editorial {
   font-family: 'Newsreader', Georgia, Cambria, "Times New Roman", Times, serif;
 }
@@ -21,25 +56,22 @@
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }
 
-/* Editorial design accents */
-.bg-editorial-paper {
-  background-color: #FDFCFB;
+/* SaaS Card & Box Shadows */
+.saas-card-shadow {
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
 }
 
-.bg-editorial-card {
-  background-color: #F5F4F0;
+.saas-card-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.saas-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -3px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
 }
 
-.border-editorial {
-  border-color: #E7E5E0;
-}
-
-.editorial-shadow {
-  box-shadow: 0 4px 20px -2px rgba(42, 77, 105, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
-}
-
-.editorial-divider {
-  border-bottom: 1px solid #E7E5E0;
+/* AI Highlight Subtle Glow */
+.ai-glow {
+  box-shadow: 0 0 15px rgba(108, 99, 255, 0.15);
 }
 
 /* Print Styles for Lesson Plans */
@@ -54,12 +86,12 @@
     color: black !important;
   }
 
-  /* Hide everything on the screen by default */
-  body * {
-    visibility: hidden !important;
+  /* Hide UI elements during print */
+  header, aside, button, nav, .no-print {
+    display: none !important;
   }
 
-  /* Show only the printable lesson plan content */
+  /* Show only printable lesson plan content */
   #printable-pdf-content,
   #printable-pdf-content *,
   #printable-lesson-plan,
@@ -109,4 +141,3 @@
     font-weight: bold !important;
   }
 }
-

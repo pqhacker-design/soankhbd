@@ -321,7 +321,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] dark:bg-stone-950 text-stone-900 dark:text-stone-100 font-sans transition-colors flex flex-col selection:bg-[#2A4D69]/20 selection:text-[#2A4D69]">
+    <div className="min-h-screen bg-[#F6F8FB] dark:bg-[#0F172A] text-slate-800 dark:text-slate-100 font-sans transition-colors flex flex-col selection:bg-[#244F70]/20 selection:text-[#244F70]">
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -333,7 +333,7 @@ export default function App() {
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
       />
 
-      <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto">
+      <div className="flex-1 flex flex-col md:flex-row max-w-[1536px] w-full mx-auto">
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
