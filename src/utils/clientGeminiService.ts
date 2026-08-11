@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { getUserApiKey } from './apiHelper';
 import { DEFAULT_REFERENCE_DOCUMENTS } from '../data/presets';
+import { cleanAndParseJson } from './jsonRepair';
 
 export function getClientGemini(customKey?: string): GoogleGenAI {
   const apiKey = (customKey || getUserApiKey()).trim();
@@ -260,7 +261,7 @@ TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON VỚI CẤU TRÚC:
     config: { responseMimeType: 'application/json' },
   });
 
-  return JSON.parse(response.text || '{}');
+  return cleanAndParseJson(response.text || '{}');
 }
 
 export async function extractObjectivesDirect(payload: any): Promise<any> {
@@ -300,7 +301,7 @@ TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON:
     config: { responseMimeType: 'application/json' },
   });
 
-  return JSON.parse(response.text || '{}');
+  return cleanAndParseJson(response.text || '{}');
 }
 
 export async function generateMaterialsDirect(payload: any): Promise<any> {
@@ -352,7 +353,7 @@ Trả về JSON duy nhất:
     config: { responseMimeType: 'application/json' },
   });
 
-  return JSON.parse(response.text || '{}');
+  return cleanAndParseJson(response.text || '{}');
 }
 
 export async function chatReferenceDirect(payload: any): Promise<string> {
