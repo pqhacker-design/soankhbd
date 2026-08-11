@@ -78,10 +78,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             Công nghệ AI Gemini 3.6 Pro cho Giáo dục
           </div>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight">
-            Chào mừng thầy cô đến với AI Lesson Planner PRO
+            Phần mềm AI Lesson Planner PRO
           </h1>
           <p className="text-sm sm:text-base text-slate-200 font-normal leading-relaxed">
-            Nền tảng tự động hóa xây dựng Kế hoạch bài dạy theo chuẩn Chương trình GDPT 2018 &amp; Công văn 5512/3535. Tiết kiệm 85% thời gian soạn bài, tích hợp sẵn phiếu học tập, quiz và bảng Rubrics đánh giá.
+            Nền tảng tự động hóa xây dựng Kế hoạch bài dạy theo chuẩn Chương trình GDPT 2018.
           </p>
           <div className="pt-2 flex flex-wrap gap-3">
             <button
