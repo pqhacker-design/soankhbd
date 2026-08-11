@@ -13,6 +13,7 @@ import { SwitchUserModal } from './components/SwitchUserModal';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { ConfirmDeleteModal } from './components/ConfirmDeleteModal';
 import { FullLessonPlan, UserProfile } from './types';
+import { setActiveUserId } from './utils/apiHelper';
 
 const DEFAULT_USERS: UserProfile[] = [
   {
@@ -263,10 +264,11 @@ export default function App() {
     localStorage.setItem('ai_planner_users_v3', JSON.stringify(users));
   }, [users]);
 
-  // Clear any previously saved user session so teacher logins do not persist across sessions
+  // Set active user ID for user-scoped API key management
   useEffect(() => {
+    setActiveUserId(currentUser.id);
     localStorage.removeItem('ai_planner_current_user_v3');
-  }, []);
+  }, [currentUser]);
 
   // Sync lesson plans to local storage
   useEffect(() => {
@@ -432,6 +434,7 @@ export default function App() {
       <ApiKeyModal
         isOpen={isApiKeyModalOpen}
         onClose={() => setIsApiKeyModalOpen(false)}
+        currentUser={currentUser}
       />
 
       {/* Confirm Delete Lesson Plan Modal */}
