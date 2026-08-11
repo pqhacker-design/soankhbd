@@ -34,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, saved
       desc: 'Tạo giáo án chuẩn CV 5512',
       icon: Wand2,
       badge: 'AI 3.6',
+      badgeColor: 'bg-[#6C63FF]/10 text-[#6C63FF] dark:bg-[#6C63FF]/20 dark:text-indigo-300',
       highlight: true,
     },
     {
@@ -41,7 +42,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, saved
       label: 'Thư Viện Bài Dạy',
       desc: 'Kho giáo án & Mẫu bài',
       icon: BookOpen,
-      badge: savedCount > 0 ? savedCount : null,
+      badge: savedCount > 0 ? `${savedCount} bài` : null,
+      badgeColor: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
     },
     {
       id: 'materials',
@@ -56,6 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, saved
       desc: 'Công văn 5512, 3535, TT22...',
       icon: FileText,
       badge: 'Chính thống',
+      badgeColor: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
     },
     {
       id: 'chat',
@@ -74,13 +77,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, saved
   ];
 
   return (
-    <aside className="w-full md:w-64 bg-[#FDFCFB] dark:bg-stone-900 border-r border-[#E7E5E0] dark:border-stone-800 p-4 flex flex-col justify-between shrink-0 transition-colors">
+    <aside className="w-full md:w-64 lg:w-72 bg-white dark:bg-[#1E293B] border-r border-slate-200/80 dark:border-slate-800 p-4 flex flex-col justify-between shrink-0 transition-colors">
       <div className="space-y-6">
         <div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3 px-3">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2.5 px-3">
             DANH MỤC CHỨC NĂNG
           </div>
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -88,31 +91,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, saved
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg text-left transition-all group ${
+                  className={`relative w-full flex items-center justify-between p-3 rounded-xl text-left transition-all group ${
                     isActive
-                      ? 'bg-[#2A4D69] text-[#FDFCFB] shadow-sm font-medium'
-                      : item.highlight
-                      ? 'bg-[#F5F3EE] dark:bg-stone-800 text-[#2A4D69] dark:text-stone-200 hover:bg-[#ECE8E1] dark:hover:bg-stone-700/80 border border-[#2A4D69]/20 dark:border-stone-700'
-                      : 'text-stone-700 dark:text-stone-300 hover:bg-[#F5F3EE] dark:hover:bg-stone-800'
+                      ? 'bg-[#EAF3F8] dark:bg-[#244F70]/30 text-[#244F70] dark:text-blue-300 font-semibold'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                   }`}
                 >
+                  {/* Left Active Indicator Bar */}
+                  {isActive && (
+                    <span className="absolute left-0 top-2 bottom-2 w-1 bg-[#244F70] dark:bg-blue-400 rounded-r-full" />
+                  )}
+
                   <div className="flex items-center gap-3">
                     <Icon
-                      className={`w-5 h-5 transition-transform group-hover:scale-105 ${
+                      className={`w-5 h-5 transition-transform group-hover:scale-105 shrink-0 ${
                         isActive
-                          ? 'text-[#FDFCFB]'
+                          ? 'text-[#244F70] dark:text-blue-400'
                           : item.highlight
-                          ? 'text-[#2A4D69] dark:text-amber-400'
-                          : 'text-stone-500 dark:text-stone-400'
+                          ? 'text-[#6C63FF] dark:text-indigo-400'
+                          : 'text-slate-400 dark:text-slate-500'
                       }`}
                     />
                     <div>
-                      <div className="text-sm font-medium leading-tight">{item.label}</div>
+                      <div className="text-sm font-semibold leading-tight">{item.label}</div>
                       <div
-                        className={`text-[10px] ${
+                        className={`text-[11px] font-normal leading-normal mt-0.5 ${
                           isActive
-                            ? 'text-stone-200'
-                            : 'text-stone-400 dark:text-stone-500'
+                            ? 'text-[#244F70]/80 dark:text-blue-300/80'
+                            : 'text-slate-400 dark:text-slate-500'
                         }`}
                       >
                         {item.desc}
@@ -122,10 +128,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, saved
 
                   {item.badge && (
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                        isActive
-                          ? 'bg-white/20 text-white'
-                          : 'bg-[#2A4D69]/10 dark:bg-stone-800 text-[#2A4D69] dark:text-stone-300'
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        item.badgeColor || 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                       }`}
                     >
                       {item.badge}
@@ -141,13 +145,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, saved
         {onOpenApiKeyModal && (
           <button
             onClick={onOpenApiKeyModal}
-            className="w-full flex items-center justify-between p-3 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50/70 dark:bg-amber-950/40 hover:bg-amber-100/80 text-amber-900 dark:text-amber-300 text-left transition-all"
+            className="w-full flex items-center justify-between p-3 rounded-xl border border-amber-200/80 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/30 hover:bg-amber-100/70 text-amber-900 dark:text-amber-300 text-left transition-all group"
           >
             <div className="flex items-center gap-2.5">
-              <KeyRound className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <KeyRound className="w-4 h-4 text-amber-600 dark:text-amber-400 group-hover:rotate-12 transition-transform" />
               <div>
                 <div className="text-xs font-bold">Cấu hình API Key</div>
-                <div className="text-[10px] text-amber-700/80 dark:text-amber-400/80">Nhập Gemini API Key cá nhân</div>
+                <div className="text-[10px] text-amber-700/80 dark:text-amber-400/80">Gemini 3.6 Pro API</div>
               </div>
             </div>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -155,28 +159,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, saved
         )}
 
         {/* Feature Highlights Box */}
-        <div className="bg-[#F5F3EE] dark:bg-stone-800/80 border border-[#E7E5E0] dark:border-stone-700 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-xs font-serif font-bold text-[#2A4D69] dark:text-amber-400 mb-1">
-            <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-4">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#244F70] dark:text-blue-400 mb-1.5">
+            <Sparkles className="w-4 h-4 text-[#6C63FF] dark:text-indigo-400" />
             GDPT 2018 Thông Minh
           </div>
-          <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed mb-3 font-sans">
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
             Tự động tích hợp 4 thành phần mục tiêu, 5 hoạt động theo CV 5512/3535, xuất Word chuẩn lề.
           </p>
-          <div className="flex items-center gap-1.5 text-[10px] text-stone-500 dark:text-stone-400 font-medium">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
             <FileCheck2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            100% Đúng chuẩn Bộ GD&ĐT
+            100% Chuẩn Bộ GD&amp;ĐT
           </div>
         </div>
       </div>
 
       {/* Footer Info */}
-      <div className="pt-4 border-t border-[#E7E5E0] dark:border-stone-800 text-center">
-        <p className="text-[11px] text-stone-400 dark:text-stone-500 font-serif italic">
+      <div className="pt-4 border-t border-slate-200/80 dark:border-slate-800 text-center">
+        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
           AI Lesson Planner Pro v3.6
         </p>
-        <p className="text-[10px] text-stone-400 dark:text-stone-600">
-          Hỗ trợ Giáo viên Việt Nam
+        <p className="text-[10px] text-slate-400 dark:text-slate-600 mt-0.5">
+          Dành riêng cho Giáo viên Việt Nam
         </p>
       </div>
     </aside>

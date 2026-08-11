@@ -12,6 +12,10 @@ import {
   Copy,
   CheckCircle2,
   Award,
+  Wand2,
+  FileSpreadsheet,
+  MessageSquareText,
+  ArrowRight,
 } from 'lucide-react';
 import {
   BarChart,
@@ -62,83 +66,159 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     value,
   }));
 
-  const COLORS = ['#2563EB', '#0D9488', '#D97706', '#7C3AED', '#EC4899', '#059669'];
+  const COLORS = ['#244F70', '#0F9D72', '#6C63FF', '#F59E0B', '#EC4899', '#3B82F6'];
 
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Hero Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-[#2A4D69] p-6 sm:p-8 text-white shadow-md border border-[#1f3b52]">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#244F70] via-[#193B55] to-[#122A3D] p-6 sm:p-8 text-white shadow-xl shadow-[#244F70]/10 border border-slate-700/50">
         <div className="relative z-10 max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/10 backdrop-blur-md text-xs font-semibold text-amber-200 border border-white/15">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-amber-300 border border-white/15">
             <Sparkles className="w-4 h-4 text-amber-300" />
-            Soạn giáo án thông minh công nghệ AI Gemini 3.6
+            Công nghệ AI Gemini 3.6 Pro cho Giáo dục
           </div>
-          <h1 className="text-2xl sm:text-4xl font-serif font-bold tracking-tight leading-tight">
-            Chào mừng thầy cô đến với AI Lesson Planner Pro Việt Nam
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight">
+            Chào mừng thầy cô đến với AI Lesson Planner PRO
           </h1>
-          <p className="text-sm sm:text-base text-stone-200 font-sans leading-relaxed">
-            Hệ thống hỗ trợ tự động xây dựng Kế hoạch bài dạy theo chuẩn Chương trình GDPT 2018 &amp; Công văn 5512, 3535 của Bộ GD&amp;ĐT. Tiết kiệm 85% thời gian nhưng vẫn đảm bảo chất lượng sư phạm xuất sắc.
+          <p className="text-sm sm:text-base text-slate-200 font-normal leading-relaxed">
+            Nền tảng tự động hóa xây dựng Kế hoạch bài dạy theo chuẩn Chương trình GDPT 2018 &amp; Công văn 5512/3535. Tiết kiệm 85% thời gian soạn bài, tích hợp sẵn phiếu học tập, quiz và bảng Rubrics đánh giá.
           </p>
           <div className="pt-2 flex flex-wrap gap-3">
             <button
               onClick={onNewPlan}
-              className="flex items-center gap-2 bg-[#FDFCFB] text-[#2A4D69] hover:bg-stone-100 font-bold text-sm px-5 py-3 rounded-lg shadow-sm hover:shadow transition-all active:scale-95"
+              className="flex items-center gap-2 bg-white text-[#244F70] hover:bg-slate-100 font-bold text-sm px-5 py-3 rounded-xl shadow-md transition-all active:scale-95"
             >
-              <PlusCircle className="w-5 h-5 text-[#2A4D69]" />
+              <Wand2 className="w-5 h-5 text-[#244F70]" />
               Soạn Bài Dạy Mới Ngay
             </button>
           </div>
         </div>
 
         {/* Decorative background glow */}
-        <div className="absolute -right-10 -bottom-10 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -right-10 -bottom-10 w-80 h-80 bg-[#6C63FF]/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute right-1/3 -top-10 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      </div>
+
+      {/* Quick Action Shortcuts */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <button
+          onClick={onNewPlan}
+          className="bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 saas-card-shadow saas-card-hover text-left group flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-11 h-11 rounded-xl bg-[#6C63FF]/10 text-[#6C63FF] dark:bg-[#6C63FF]/20 dark:text-indigo-300 flex items-center justify-center font-bold">
+              <Wand2 className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold text-[#6C63FF] group-hover:translate-x-1 transition-transform flex items-center gap-1">
+              Tạo ngay <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900 dark:text-white text-base">Soạn Bài Dạy AI</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Chuẩn CV 5512 với 5 hoạt động bài dạy</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => {}}
+          className="bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 saas-card-shadow saas-card-hover text-left group flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-11 h-11 rounded-xl bg-[#244F70]/10 text-[#244F70] dark:bg-[#244F70]/30 dark:text-blue-300 flex items-center justify-center font-bold">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold text-[#244F70] dark:text-blue-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+              {lessonPlans.length} giáo án
+            </span>
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900 dark:text-white text-base">Thư Viện Bài Dạy</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Lưu trữ &amp; quản lý toàn bộ bài đã soạn</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => {}}
+          className="bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 saas-card-shadow saas-card-hover text-left group flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-11 h-11 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold">
+              <FileSpreadsheet className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold text-emerald-600 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+              Khám phá <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900 dark:text-white text-base">Ngân Hàng Học Liệu</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Phiếu học tập, Quiz trắc nghiệm &amp; Rubrics</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => {}}
+          className="bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 saas-card-shadow saas-card-hover text-left group flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-11 h-11 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold">
+              <MessageSquareText className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold text-amber-600 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+              Tư vấn AI <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900 dark:text-white text-base">Trợ Lý Hỏi Đáp AI</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Hỏi đáp phương pháp &amp; quy định GDPT 2018</p>
+          </div>
+        </button>
       </div>
 
       {/* Counter Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[#FDFCFB] dark:bg-stone-900 border border-[#E7E5E0] dark:border-stone-800 rounded-xl p-5 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-[#2A4D69]/10 dark:bg-stone-800 text-[#2A4D69] dark:text-amber-400 flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 saas-card-shadow flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-[#244F70]/10 dark:bg-[#244F70]/30 text-[#244F70] dark:text-blue-300 flex items-center justify-center shrink-0">
             <FileText className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-xs font-medium text-stone-500 dark:text-stone-400">Tổng Kế Hoạch Bài Dạy</div>
-            <div className="text-2xl font-serif font-bold text-stone-900 dark:text-white mt-0.5">{lessonPlans.length}</div>
-            <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1 mt-1">
+            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">Tổng Kế Hoạch Bài Dạy</div>
+            <div className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">{lessonPlans.length}</div>
+            <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 mt-1">
               <TrendingUp className="w-3 h-3" /> Chuẩn CV 5512/3535
             </div>
           </div>
         </div>
 
-        <div className="bg-[#FDFCFB] dark:bg-stone-900 border border-[#E7E5E0] dark:border-stone-800 rounded-xl p-5 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-[#2A4D69]/10 dark:bg-stone-800 text-[#2A4D69] dark:text-amber-400 flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 saas-card-shadow flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-[#6C63FF]/10 text-[#6C63FF] dark:bg-[#6C63FF]/20 dark:text-indigo-300 flex items-center justify-center shrink-0">
             <BookOpen className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-xs font-medium text-stone-500 dark:text-stone-400">Môn Học Phủ Sóng</div>
-            <div className="text-2xl font-serif font-bold text-stone-900 dark:text-white mt-0.5">{Object.keys(subjectCounts).length} Môn</div>
-            <div className="text-[10px] text-stone-400 mt-1">Tiểu học, THCS, THPT</div>
+            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">Môn Học Phủ Sóng</div>
+            <div className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">{Object.keys(subjectCounts).length} Môn</div>
+            <div className="text-[11px] text-slate-400 mt-1 font-medium">Tiểu học, THCS, THPT</div>
           </div>
         </div>
 
-        <div className="bg-[#FDFCFB] dark:bg-stone-900 border border-[#E7E5E0] dark:border-stone-800 rounded-xl p-5 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 saas-card-shadow flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
             <Clock className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-xs font-medium text-stone-500 dark:text-stone-400">Thời Gian Tiết Kiệm</div>
-            <div className="text-2xl font-serif font-bold text-stone-900 dark:text-white mt-0.5">~{lessonPlans.length * 2.5} Giờ</div>
-            <div className="text-[10px] text-amber-700 dark:text-amber-400 font-medium mt-1">Năng suất gấp 5 lần</div>
+            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">Thời Gian Tiết Kiệm</div>
+            <div className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">~{lessonPlans.length * 2.5} Giờ</div>
+            <div className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold mt-1">Năng suất gấp 5 lần</div>
           </div>
         </div>
 
-        <div className="bg-[#FDFCFB] dark:bg-stone-900 border border-[#E7E5E0] dark:border-stone-800 rounded-xl p-5 shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 saas-card-shadow flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <Award className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-xs font-medium text-stone-500 dark:text-stone-400">Đánh Giá Chất Lượng</div>
-            <div className="text-2xl font-serif font-bold text-stone-900 dark:text-white mt-0.5">100%</div>
-            <div className="text-[10px] text-purple-700 dark:text-purple-400 font-medium mt-1">Đầy đủ 4 thành phần</div>
+            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">Đánh Giá Chất Lượng</div>
+            <div className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">100%</div>
+            <div className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold mt-1">Đầy đủ 4 thành phần</div>
           </div>
         </div>
       </div>
@@ -146,9 +226,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Charts Row */}
       {lessonPlans.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-[#FDFCFB] dark:bg-stone-900 border border-[#E7E5E0] dark:border-stone-800 rounded-xl p-6 shadow-xs">
-            <h3 className="text-base font-serif font-bold text-stone-900 dark:text-white mb-4 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-[#2A4D69] dark:text-amber-400" />
+          <div className="bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 saas-card-shadow">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-[#244F70] dark:text-blue-400" />
               Phân Bổ Kế Hoạch Bài Dạy Theo Môn Học
             </h3>
             <div className="h-64">
@@ -174,9 +254,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          <div className="bg-[#FDFCFB] dark:bg-stone-900 border border-[#E7E5E0] dark:border-stone-800 rounded-xl p-6 shadow-xs">
-            <h3 className="text-base font-serif font-bold text-stone-900 dark:text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-[#2A4D69] dark:text-amber-400" />
+          <div className="bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 saas-card-shadow">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-[#244F70] dark:text-blue-400" />
               Thống Kê Số Lượng Bài Theo Khối Lớp
             </h3>
             <div className="h-64">
@@ -186,7 +266,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <XAxis dataKey="name" />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="#2A4D69" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="value" fill="#244F70" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -195,45 +275,45 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* Recent Lesson Plans Table */}
-      <div className="bg-[#FDFCFB] dark:bg-stone-900 border border-[#E7E5E0] dark:border-stone-800 rounded-xl p-6 shadow-xs space-y-4">
+      <div className="bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 saas-card-shadow space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-serif font-bold text-stone-900 dark:text-white">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
               Kế Hoạch Bài Dạy Mới Soạn
             </h2>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Danh sách các bài dạy được lưu gần đây trong hệ thống
             </p>
           </div>
           <button
             onClick={onNewPlan}
-            className="text-xs font-semibold text-[#2A4D69] hover:text-[#1f3b52] dark:text-amber-400 flex items-center gap-1.5"
+            className="text-xs font-semibold text-[#244F70] hover:text-[#193B55] dark:text-blue-400 flex items-center gap-1.5"
           >
             <PlusCircle className="w-4 h-4" /> Soạn thêm bài mới
           </button>
         </div>
 
         {lessonPlans.length === 0 ? (
-          <div className="text-center py-12 border-2 border-dashed border-[#E7E5E0] dark:border-stone-800 rounded-xl">
-            <FileText className="w-12 h-12 text-stone-300 mx-auto mb-3" />
-            <h3 className="text-base font-serif font-bold text-stone-700 dark:text-stone-300">
+          <div className="text-center py-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+            <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <h3 className="text-base font-bold text-slate-700 dark:text-slate-300">
               Chưa có Kế hoạch bài dạy nào
             </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 mb-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4">
               Hãy bấm nút "Soạn Bài Dạy Mới" để AI tự động tạo giáo án chuẩn Công văn 5512 cho thầy cô.
             </p>
             <button
               onClick={onNewPlan}
-              className="bg-[#2A4D69] hover:bg-[#1f3b52] text-white font-medium text-xs px-4 py-2.5 rounded-lg shadow transition-all inline-flex items-center gap-2"
+              className="bg-[#244F70] hover:bg-[#193B55] text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow transition-all inline-flex items-center gap-2"
             >
-              <Sparkles className="w-4 h-4" /> Soạn bài đầu tiên ngay
+              <Sparkles className="w-4 h-4 text-amber-300" /> Soạn bài đầu tiên ngay
             </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="border-b border-[#E7E5E0] dark:border-stone-800 text-xs font-semibold text-stone-400 uppercase tracking-wider">
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                   <th className="py-3 px-4">Tên bài dạy</th>
                   <th className="py-3 px-4">Môn &amp; Lớp</th>
                   <th className="py-3 px-4">Bộ sách</th>
@@ -241,46 +321,46 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <th className="py-3 px-4 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E7E5E0]/60 dark:divide-stone-800">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {lessonPlans.slice(0, 5).map((plan) => (
-                  <tr key={plan.id} className="hover:bg-[#F5F3EE] dark:hover:bg-stone-800/50 transition-colors">
-                    <td className="py-3.5 px-4 font-serif font-medium text-stone-900 dark:text-white max-w-xs truncate">
+                  <tr key={plan.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white max-w-xs truncate">
                       {plan.info.lessonTitle}
                     </td>
-                    <td className="py-3.5 px-4 text-stone-600 dark:text-stone-300 text-xs">
-                      <span className="font-medium">{plan.subject}</span> - {plan.grade}
+                    <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 text-xs">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{plan.subject}</span> - {plan.grade}
                     </td>
-                    <td className="py-3.5 px-4 text-stone-500 dark:text-stone-400 text-xs truncate max-w-xs">
+                    <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-xs truncate max-w-xs">
                       {plan.textbook}
                     </td>
-                    <td className="py-3.5 px-4 text-stone-500 dark:text-stone-400 text-xs">
+                    <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-xs">
                       {plan.info.date || new Date().toISOString().split('T')[0]}
                     </td>
                     <td className="py-3.5 px-4 text-right space-x-2">
                       <button
                         onClick={() => onSelectPlan(plan)}
-                        className="p-1.5 rounded-lg text-[#2A4D69] hover:bg-[#2A4D69]/10 dark:hover:bg-stone-800 transition-colors"
+                        className="p-1.5 rounded-lg text-[#244F70] hover:bg-[#244F70]/10 dark:hover:bg-slate-800 transition-colors"
                         title="Xem &amp; Chỉnh sửa"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => exportLessonPlanToDocx(plan)}
-                        className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-50 dark:hover:bg-stone-800 transition-colors"
+                        className="p-1.5 rounded-lg text-emerald-700 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
                         title="Tải Word (.docx)"
                       >
                         <Download className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => onDuplicatePlan(plan)}
-                        className="p-1.5 rounded-lg text-purple-700 hover:bg-purple-50 dark:hover:bg-stone-800 transition-colors"
+                        className="p-1.5 rounded-lg text-purple-700 hover:bg-purple-50 dark:hover:bg-slate-800 transition-colors"
                         title="Nhân bản"
                       >
                         <Copy className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => onDeletePlan(plan.id)}
-                        className="p-1.5 rounded-lg text-rose-700 hover:bg-rose-50 dark:hover:bg-stone-800 transition-colors"
+                        className="p-1.5 rounded-lg text-rose-700 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
                         title="Xóa"
                       >
                         <Trash2 className="w-4 h-4" />
