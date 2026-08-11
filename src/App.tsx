@@ -237,18 +237,8 @@ export default function App() {
     return DEFAULT_USERS;
   });
 
-  // Current Active User state persisted in localStorage
-  const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
-    const local = localStorage.getItem('ai_planner_current_user_v3');
-    if (local) {
-      try {
-        return JSON.parse(local);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return DEFAULT_USERS[0];
-  });
+  // Current Active User state (session-only, resets to default on refresh/new session)
+  const [currentUser, setCurrentUser] = useState<UserProfile>(DEFAULT_USERS[0]);
 
   const [isSwitchUserOpen, setIsSwitchUserOpen] = useState<boolean>(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
@@ -273,9 +263,10 @@ export default function App() {
     localStorage.setItem('ai_planner_users_v3', JSON.stringify(users));
   }, [users]);
 
+  // Clear any previously saved user session so teacher logins do not persist across sessions
   useEffect(() => {
-    localStorage.setItem('ai_planner_current_user_v3', JSON.stringify(currentUser));
-  }, [currentUser]);
+    localStorage.removeItem('ai_planner_current_user_v3');
+  }, []);
 
   // Sync lesson plans to local storage
   useEffect(() => {
