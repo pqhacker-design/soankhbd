@@ -203,5 +203,6 @@ export interface UserProfile {
   password?: string;
   role: 'Admin' | 'Giáo viên';
   school: string;
+  department?: string;
   avatarUrl: string;
 }
