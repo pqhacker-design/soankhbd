@@ -22,9 +22,8 @@ export function getUserApiKey(userId?: string): string {
   const targetId = userId || getActiveUserId();
   if (targetId) {
     const userKey = localStorage.getItem(`${KEY_PREFIX}${targetId}`);
-    if (userKey) return userKey.trim();
+    return userKey ? userKey.trim() : '';
   }
-  // Fallback to global key if set previously
   const legacyKey = localStorage.getItem('user_gemini_api_key');
   return legacyKey ? legacyKey.trim() : '';
 }
