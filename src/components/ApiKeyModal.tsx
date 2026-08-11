@@ -108,14 +108,15 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
     // Second attempt: Direct client-side validation fallback
     if (!isValid && !errorMessage) {
       try {
-        const { validateApiKeyDirect } = await import('../utils/clientGeminiService');
-        const clientOk = await validateApiKeyDirect(cleanKey);
-        if (clientOk) {
+        const directRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`);
+        if (directRes.ok) {
           isValid = true;
+        } else {
+          errorMessage = 'Mã API Key không hợp lệ hoặc đã bị vô hiệu hóa. Vui lòng kiểm tra lại mã trên Google AI Studio.';
         }
       } catch (clientErr: any) {
         console.error('Direct client validation error:', clientErr);
-        errorMessage = clientErr.message || 'Mã API Key không hợp lệ hoặc đã hết hạn. Vui lòng kiểm tra lại.';
+        errorMessage = 'Không thể kết nối đến máy chủ Google Gemini. Vui lòng kiểm tra lại kết nối mạng.';
       }
     }
 
