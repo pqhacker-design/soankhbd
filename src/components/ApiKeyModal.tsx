@@ -11,19 +11,23 @@ import {
   X,
   AlertTriangle,
   Info,
+  UserCheck,
 } from 'lucide-react';
 import { getApiKeyHeaders, getUserApiKey, setUserApiKey, clearUserApiKey } from '../utils/apiHelper';
+import { UserProfile } from '../types';
 
 interface ApiKeyModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaveSuccess?: () => void;
+  currentUser?: UserProfile;
 }
 
 export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   isOpen,
   onClose,
   onSaveSuccess,
+  currentUser,
 }) => {
   const [apiKeyInput, setApiKeyInput] = useState<string>('');
   const [showKey, setShowKey] = useState<boolean>(false);
@@ -35,21 +39,21 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      const existing = getUserApiKey();
+      const existing = getUserApiKey(currentUser?.id);
       setApiKeyInput(existing);
       if (existing) {
         setStatusMessage({
           type: 'success',
-          text: 'Đã lưu Gemini API Key cá nhân trong bộ nhớ trình duyệt.',
+          text: `Đã lưu Gemini API Key cá nhân cho tài khoản ${currentUser?.name || ''}.`,
         });
       } else {
         setStatusMessage({
           type: 'info',
-          text: 'Chưa có API Key. Vui lòng nhập Gemini API Key của thầy/cô để khởi tạo tính năng AI.',
+          text: `Chưa có API Key. Vui lòng nhập Gemini API Key cá nhân của ${currentUser?.name || 'thầy/cô'} để sử dụng tính năng AI.`,
         });
       }
     }
-  }, [isOpen]);
+  }, [isOpen, currentUser]);
 
   if (!isOpen) return null;
 
@@ -116,10 +120,10 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
     }
 
     if (isValid) {
-      setUserApiKey(cleanKey);
+      setUserApiKey(cleanKey, currentUser?.id);
       setStatusMessage({
         type: 'success',
-        text: 'Xác thực thành công! Gemini API Key cá nhân đã sẵn sàng sử dụng.',
+        text: `Xác thực thành công! Gemini API Key cá nhân đã được lưu riêng cho tài khoản "${currentUser?.name || ''}".`,
       });
       if (onSaveSuccess) onSaveSuccess();
     } else {
@@ -133,15 +137,15 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   };
 
   const handleClearKey = () => {
-    clearUserApiKey();
+    clearUserApiKey(currentUser?.id);
     setApiKeyInput('');
     setStatusMessage({
       type: 'info',
-      text: 'Đã xóa API Key thành công khỏi trình duyệt.',
+      text: `Đã xóa API Key thành công cho tài khoản ${currentUser?.name || ''}.`,
     });
   };
 
-  const hasConfiguredKey = !!getUserApiKey();
+  const hasConfiguredKey = !!getUserApiKey(currentUser?.id);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
@@ -164,10 +168,20 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               Cấu Hình Gemini API Key Cá Nhân
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Nhập khóa API Google Gemini riêng của thầy/cô để khởi tạo giáo án &amp; tư vấn AI
+              Khóa API riêng theo từng tài khoản giáo viên để sinh giáo án &amp; tư vấn AI
             </p>
           </div>
         </div>
+
+        {/* Current User Badge */}
+        {currentUser && (
+          <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/40 p-2.5 rounded-2xl border border-blue-200 dark:border-blue-900 text-xs text-blue-900 dark:text-blue-200 font-medium">
+            <UserCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+            <span>
+              Đang cấu hình API Key cho: <strong className="font-bold">{currentUser.name}</strong> ({currentUser.school})
+            </span>
+          </div>
+        )}
 
         {/* Status Banner */}
         {statusMessage && (
@@ -234,7 +248,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               </button>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
-              Khóa API Key của bạn được lưu an toàn cục bộ (LocalStorage) trong trình duyệt của bạn và không chia sẻ cho bất kỳ ai khác.
+              Khóa API Key được bảo mật lưu riêng cho tài khoản này và không dùng chung với tài khoản khác.
             </p>
           </div>
 
@@ -246,7 +260,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                 onClick={handleClearKey}
                 className="text-xs text-rose-600 dark:text-rose-400 hover:underline font-semibold"
               >
-                Xóa Key khỏi trình duyệt
+                Xóa Key của tài khoản này
               </button>
             ) : (
               <div />
