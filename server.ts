@@ -13,13 +13,13 @@ const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
-// Helper to get Gemini Client using user-provided or environment API key
+// Helper to get Gemini Client using user-provided API key
 function getGeminiClient(req: express.Request): GoogleGenAI {
   const userKey = (req.headers['x-user-api-key'] as string) || req.body?.userApiKey || '';
-  const activeKey = userKey.trim() || process.env.GEMINI_API_KEY || '';
+  const activeKey = userKey.trim();
 
   if (!activeKey) {
-    throw new Error('MISSING_API_KEY: Vui lòng nhập mã Gemini API Key cá nhân trong phần Cấu Hình Kết Nối API để sử dụng tính năng AI này.');
+    throw new Error('MISSING_API_KEY: Mỗi giáo viên cần cấu hình Gemini API Key cá nhân của mình. Vui lòng bấm "Cấu hình API Key" ở góc trên giao diện để nhập mã API Key cá nhân.');
   }
 
   return new GoogleGenAI({
