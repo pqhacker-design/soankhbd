@@ -114,11 +114,50 @@ export const SwitchUserModal: React.FC<SwitchUserModalProps> = ({
                 </span>
               </div>
               <div className="text-[11px] text-slate-500 font-mono">{currentUser.email}</div>
+              <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">{currentUser.school}</div>
             </div>
           </div>
           <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
             <UserCheck className="w-3 h-3" /> Đang dùng
           </span>
+        </div>
+
+        {/* Quick Select Teacher List */}
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+            Chọn nhanh tài khoản giáo viên trong hệ thống:
+          </label>
+          <div className="grid grid-cols-1 gap-1.5 max-h-36 overflow-y-auto pr-1">
+            {usersList.map((u) => {
+              const isCurrent = u.id === currentUser.id;
+              return (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => {
+                    setEmail(u.email);
+                    setPassword(u.password || '123456');
+                  }}
+                  className={`p-2 rounded-xl border text-left flex items-center justify-between text-xs transition-all ${
+                    isCurrent
+                      ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40'
+                      : 'border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <img src={u.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} alt={u.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-900 dark:text-white truncate">{u.name}</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{u.school}</div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium shrink-0 ml-1">
+                    [Chọn]
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Login Form */}
