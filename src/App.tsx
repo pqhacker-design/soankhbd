@@ -12,6 +12,7 @@ import { AdminManagementView } from './components/AdminManagementView';
 import { SwitchUserModal } from './components/SwitchUserModal';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { ConfirmDeleteModal } from './components/ConfirmDeleteModal';
+import { LoginScreen } from './components/LoginScreen';
 import { FullLessonPlan, UserProfile } from './types';
 import { setActiveUserId, setUserApiKey } from './utils/apiHelper';
 import {
@@ -248,8 +249,27 @@ export default function App() {
     return DEFAULT_USERS;
   });
 
-  // Current Active User state
-  const [currentUser, setCurrentUser] = useState<UserProfile>(DEFAULT_USERS[0]);
+  // Current Active User state - restored from saved session or null if not logged in
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
+    const savedUserId = localStorage.getItem('ai_planner_active_logged_in_user_id');
+    if (savedUserId) {
+      const localUsersStr = localStorage.getItem('ai_planner_users_v3');
+      let userList = DEFAULT_USERS;
+      if (localUsersStr) {
+        try {
+          const parsed = JSON.parse(localUsersStr);
+          if (Array.isArray(parsed) && parsed.length > 0) userList = parsed;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      const matched = userList.find((u) => u.id === savedUserId);
+      if (matched) return matched;
+    }
+    return null; // Require login first if no saved session
+  });
+
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => !!currentUser);
 
   const [isSwitchUserOpen, setIsSwitchUserOpen] = useState<boolean>(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
@@ -258,6 +278,24 @@ export default function App() {
   const [lessonPlans, setLessonPlans] = useState<FullLessonPlan[]>([INITIAL_SAMPLE_PLAN]);
   const [selectedPlan, setSelectedPlan] = useState<FullLessonPlan>(INITIAL_SAMPLE_PLAN);
   const [isDataLoading, setIsDataLoading] = useState<boolean>(true);
+
+  const handleLoginSuccess = (user: UserProfile) => {
+    localStorage.setItem('ai_planner_active_logged_in_user_id', user.id);
+    setCurrentUser(user);
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('ai_planner_active_logged_in_user_id');
+    setCurrentUser(null);
+    setIsLoggedIn(false);
+  };
+
+  const handleSwitchUser = (user: UserProfile) => {
+    localStorage.setItem('ai_planner_active_logged_in_user_id', user.id);
+    setCurrentUser(user);
+    setIsLoggedIn(true);
+  };
 
   // Sync users list to local storage
   useEffect(() => {
@@ -270,8 +308,10 @@ export default function App() {
     syncUsersWithFirestore(DEFAULT_USERS).then((syncedUsers) => {
       if (isMounted && Array.isArray(syncedUsers) && syncedUsers.length > 0) {
         setUsers(syncedUsers);
-        const matched = syncedUsers.find((u) => u.id === currentUser.id);
-        if (matched) setCurrentUser(matched);
+        if (currentUser) {
+          const matched = syncedUsers.find((u) => u.id === currentUser.id);
+          if (matched) setCurrentUser(matched);
+        }
       }
     });
     return () => {
@@ -281,11 +321,13 @@ export default function App() {
 
   // When currentUser changes: Load that user's API Key & Lesson Plans from Cloud Firestore
   useEffect(() => {
+    if (!currentUser) return;
     let isMounted = true;
     setIsDataLoading(true);
     setActiveUserId(currentUser.id);
 
     async function loadUserData() {
+      if (!currentUser) return;
       try {
         // Fetch user-scoped API key from Cloud Firestore
         const remoteApiKey = await getUserApiKeyFromFirestore(currentUser.id);
@@ -315,7 +357,7 @@ export default function App() {
     return () => {
       isMounted = false;
     };
-  }, [currentUser.id]);
+  }, [currentUser?.id]);
 
   // Sync lesson plans to local storage as fallback
   useEffect(() => {
@@ -337,6 +379,7 @@ export default function App() {
   };
 
   const handlePlanGenerated = (newPlan: FullLessonPlan) => {
+    if (!currentUser) return;
     setLessonPlans([newPlan, ...lessonPlans]);
     setSelectedPlan(newPlan);
     setActiveTab('editor');
@@ -344,6 +387,7 @@ export default function App() {
   };
 
   const handleSavePlan = (updatedPlan: FullLessonPlan) => {
+    if (!currentUser) return;
     const updated = lessonPlans.map((p) => (p.id === updatedPlan.id ? updatedPlan : p));
     setLessonPlans(updated);
     setSelectedPlan(updatedPlan);
@@ -356,6 +400,7 @@ export default function App() {
   };
 
   const handleDuplicatePlan = (plan: FullLessonPlan) => {
+    if (!currentUser) return;
     const duplicated: FullLessonPlan = {
       ...plan,
       id: `lp-${currentUser.id}-${Date.now()}`,
@@ -395,12 +440,17 @@ export default function App() {
   };
 
   const handleImportPlans = (imported: FullLessonPlan[]) => {
+    if (!currentUser) return;
     setLessonPlans([...imported, ...lessonPlans]);
     if (imported.length > 0) {
       setSelectedPlan(imported[0]);
     }
     importLessonPlansToFirestore(imported, currentUser.id);
   };
+
+  if (!isLoggedIn || !currentUser) {
+    return <LoginScreen usersList={users} onLoginSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <div className="min-h-screen bg-[#F6F8FB] dark:bg-[#0F172A] text-slate-800 dark:text-slate-100 font-sans transition-colors flex flex-col selection:bg-[#244F70]/20 selection:text-[#244F70]">
@@ -413,6 +463,7 @@ export default function App() {
         onNewPlan={() => setActiveTab('planner')}
         onOpenSwitchUser={() => setIsSwitchUserOpen(true)}
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       <div className="flex-1 flex flex-col md:flex-row max-w-[1536px] w-full mx-auto">
@@ -494,7 +545,7 @@ export default function App() {
               currentUser={currentUser}
               users={users}
               onUpdateUsers={handleUpdateUsers}
-              onSwitchUser={(u) => setCurrentUser(u)}
+              onSwitchUser={handleSwitchUser}
               lessonPlans={lessonPlans}
               onImportPlans={handleImportPlans}
             />
@@ -508,7 +559,7 @@ export default function App() {
         onClose={() => setIsSwitchUserOpen(false)}
         currentUser={currentUser}
         usersList={users}
-        onSwitchUser={(u) => setCurrentUser(u)}
+        onSwitchUser={handleSwitchUser}
       />
 
       {/* API Key Modal */}
