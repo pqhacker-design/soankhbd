@@ -627,6 +627,9 @@ Hãy trả lời bằng tiếng Việt văn minh, mạch lạc, dễ hiểu, d�
 
 // Vite Middleware & Production Static Serving
 async function startServer() {
+  if (process.env.VERCEL) {
+    return;
+  }
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
@@ -648,3 +651,6 @@ async function startServer() {
 }
 
 startServer();
+
+export default app;
+
