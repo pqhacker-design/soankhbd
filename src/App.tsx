@@ -28,44 +28,14 @@ import { RefreshCw, CloudCheck } from 'lucide-react';
 
 const DEFAULT_USERS: UserProfile[] = [
   {
-    id: 'usr-admin',
-    name: 'Thầy Nguyễn Văn An',
-    email: 'admin@nguyendu.edu.vn',
+    id: 'usr-admin-pqhacker',
+    name: 'Ngô Thanh Hùng',
+    email: 'pqhacker@gmail.com',
     password: '123456',
     role: 'Admin',
-    school: 'Trường THCS Nguyễn Du',
-    department: 'Tổ Toán - Tự Nhiên',
-    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
-  },
-  {
-    id: 'usr-mai',
-    name: 'Cô Trần Thị Mai',
-    email: 'tranthimai@lequydon.edu.vn',
-    password: '123456',
-    role: 'Giáo viên',
-    school: 'Trường THPT Lê Quý Đôn',
-    department: 'Tổ Ngữ Văn',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
-  },
-  {
-    id: 'usr-nam',
-    name: 'Thầy Lê Văn Nam',
-    email: 'levannam@chuvanan.edu.vn',
-    password: '123456',
-    role: 'Giáo viên',
-    school: 'Trường THCS Chu Văn An',
-    department: 'Tổ Khoa Học Tự Nhiên',
+    school: 'Trường THCS Bình San',
+    department: 'Ban BGH / Tổ Tự Nhiên',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-  },
-  {
-    id: 'usr-ha',
-    name: 'Cô Phạm Thanh Hà',
-    email: 'phamthanhha@nguyenbinhkhiem.edu.vn',
-    password: '123456',
-    role: 'Giáo viên',
-    school: 'Trường Tiểu Học Nguyễn Bỉnh Khiêm',
-    department: 'Tổ Khối 4 - 5',
-    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150',
   },
 ];
 
@@ -237,11 +207,24 @@ export default function App() {
 
   // Registered Users state persisted in localStorage
   const [users, setUsers] = useState<UserProfile[]>(() => {
+    const demoEmails = [
+      'admin@nguyendu.edu.vn',
+      'tranthimai@lequydon.edu.vn',
+      'levannam@chuvanan.edu.vn',
+      'phamthanhha@nguyenbinhkhiem.edu.vn',
+    ];
     const local = localStorage.getItem('ai_planner_users_v3');
     if (local) {
       try {
         const parsed = JSON.parse(local);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const cleaned = parsed.filter((u) => u.email && !demoEmails.includes(u.email.toLowerCase()));
+          const hasAdmin = cleaned.some((u) => u.email.toLowerCase() === 'pqhacker@gmail.com');
+          if (!hasAdmin) {
+            cleaned.unshift(DEFAULT_USERS[0]);
+          }
+          if (cleaned.length > 0) return cleaned;
+        }
       } catch (e) {
         console.error(e);
       }
