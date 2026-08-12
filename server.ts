@@ -548,36 +548,39 @@ app.post('/api/integrate-lesson-plan', async (req, res) => {
       : 'Năng lực số, Bảo vệ Môi trường, Giáo dục Hướng nghiệp, An toàn giao thông, Giáo dục địa phương';
 
     const prompt = `
-Bạn là Chuyên gia Cao cấp về Chuẩn hóa và Tích hợp Giáo dục Phổ thông GDPT 2018 Việt Nam (Công văn 5512/BGDĐT đối với THCS/THPT, Công văn 3535 đối với Tiểu học).
+Bạn là Chuyên gia Cao cấp về Chuẩn hóa và Tích hợp Giáo dục Phổ thông GDPT 2018 Việt Nam (Công văn 5512/BGDĐT, Công văn 3535).
 
-Dưới đây là NỘI DUNG GIÁO ÁN SẴN CÓ do giáo viên tải lên:
+Dưới đây là NỘI DUNG GIÁO ÁN / TÀI LIỆU DẠY HỌC do giáo viên tải lên (Có thể chứa 1 bài hoặc NHIỀU BÀI / NHIỀU TIẾT / NHIỀU CHƯƠNG theo định dạng riêng của giáo viên):
 ================================================================================
 ${uploadedText}
 ================================================================================
 
-QUY TẮC BẢO TOÀN NGUYÊN VĂN BẮT BUỘC (STRICT VERBATIM RULE):
-1. **GIỮ NGUYÊN 100% VĂN BẢN GỐC**: Tất cả các đoạn văn, câu hỏi, kiến thức, lời dặn, các bước tổ chức thực hiện, chuyển giao nhiệm vụ, sản phẩm học sinh, kết luận... trong giáo án gốc do giáo viên tải lên PHẢI ĐƯỢC GIỮ NGUYÊN VĂN TỪNG CÂU TỪNG TỪ.
-2. **TUYỆT ĐỐI KHÔNG TÓM TẮT, KHÔNG RÚT GỌN, KHÔNG DIỄN ĐẠT LẠI, KHÔNG SỬA ĐỔI** bất kỳ nội dung nào có sẵn trong giáo án gốc.
-3. **NHIỆM VỤ DUY NHẤT DÀNH CHO BẠN**: Chỉ TỰ ĐỘNG CHÈN BỔ SUNG THÊM các điểm tích hợp chuyên sâu theo danh sách chủ đề được chọn: [${topicList}].
-   - **Tích hợp Năng lực số**: Chèn nội dung sử dụng thiết bị số, ứng dụng CNTT, phần mềm học tập, tra cứu, an toàn mạng.
-   - **Tích hợp Môi trường & Biến đổi khí hậu**: Chèn nội dung tiết kiệm tài nguyên, phân loại rác, bảo vệ cảnh quan.
-   - **Tích hợp Hướng nghiệp**: Chèn nội dung liên hệ ứng dụng ngành nghề thực tế, kỹ năng công việc tương lai.
-   - **Tích hợp An toàn giao thông**: Chèn nội dung chấp hành luật giao thông, văn hóa đi lại an toàn.
-   - **Tích hợp Giáo dục địa phương**: Chèn nội dung liên hệ di sản, lịch sử, văn hóa, sản vật, kinh tế địa phương.
+NHIỆM VỤ CỦA BẠN:
+1. **BẢO TOÀN NGUYÊN VĂN 100% TOÀN BỘ NỘI DUNG VÀ ĐỊNH DẠNG TÀI LIỆU GỐC**:
+   - Nếu tài liệu chứa 1 bài, 3 bài hay 10 bài -> Giữ lại ĐẦY ĐỦ 100% tất cả các bài, tất cả các tiết, tất cả các đoạn văn, tiêu đề, câu hỏi và nội dung gốc.
+   - TUYỆT ĐỐI KHÔNG TÓM TẮT, KHÔNG CẮT GIẢM, KHÔNG ÉP CẢ TÀI LIỆU VÀO KHUÔN MẪU MỘT BÀI ĐƠN LẺ NẾU CÓ NHIỀU BÀI.
 
-4. **CÁCH CHÈN VÀO GIÁO ÁN**:
-   - Chèn nhãn nổi bật dưới dạng:
-     • [TÍCH HỢP NĂNG LỰC SỐ: ...]
-     • [TÍCH HỢP MÔI TRƯỜNG: ...]
-     • [TÍCH HỢP HƯỚNG NGHIỆP: ...]
-     • [TÍCH HỢP AN TOÀN GIAO THÔNG: ...]
-     • [TÍCH HỢP GIÁO DỤC ĐỊA PHƯƠNG: ...]
-   - Chèn vào đúng vị trí thích hợp trong Mục tiêu, Thiết bị dạy học, các Hoạt động 1, 2, 3, 4 (Bước 1: Chuyển giao nhiệm vụ, Bước 2: Thực hiện nhiệm vụ, Bước 3: Báo cáo thảo luận, Bước 4: Kết luận nhận định) và Đánh giá.
+2. **CHỈ CHÈN BỔ SUNG CÁC ĐIỂM TÍCH HỢP VÀO CÁC VỊ TRÍ THÍCH HỢP**:
+   Danh sách các chủ đề tích hợp cần bổ sung: [${topicList}].
+   - **Tích hợp Năng lực số**: Chèn thêm việc sử dụng phần mềm, khai thác học liệu số, ứng dụng CNTT, tra cứu trực tuyến, an toàn mạng.
+   - **Tích hợp Môi trường & Biến đổi khí hậu**: Chèn thêm liên hệ tiết kiệm năng lượng, bảo vệ cảnh quan, phân loại rác, ứng phó biến đổi khí hậu.
+   - **Tích hợp Hướng nghiệp**: Chèn thêm liên hệ định hướng ứng dụng nghề nghiệp tương lai, vị trí công việc thực tế.
+   - **Tích hợp An toàn giao thông**: Chèn thêm tình huống chấp hành luật giao thông, văn hóa giao thông an toàn.
+   - **Tích hợp Giáo dục địa phương**: Chèn thêm liên hệ thực tiễn lịch sử, danh lam thắng cảnh, văn hóa di sản, sản vật, kinh tế xã hội địa phương.
+
+3. **QUY CÁCH CHÈN**:
+   Đặt tất cả các điểm bổ sung trong ngoặc vuông nổi bật:
+   • [TÍCH HỢP NĂNG LỰC SỐ: ...]
+   • [TÍCH HỢP MÔI TRƯỜNG: ...]
+   • [TÍCH HỢP HƯỚNG NGHIỆP: ...]
+   • [TÍCH HỢP AN TOÀN GIAO THÔNG: ...]
+   • [TÍCH HỢP GIÁO DỤC ĐỊA PHƯƠNG: ...]
 
 Yêu cầu bổ sung từ giáo viên: ${customInstructions || 'Không có.'}
 
 Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc sau:
 {
+  "documentTitle": "Tên tổng quan giáo án hoặc tiêu đề các bài trong giáo án gốc",
   "integrationSummary": [
     "Tóm tắt điểm tích hợp Năng lực số đã bổ sung...",
     "Tóm tắt điểm tích hợp Môi trường đã bổ sung...",
@@ -585,75 +588,7 @@ Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc s
     "Tóm tắt điểm tích hợp An toàn giao thông đã bổ sung...",
     "Tóm tắt điểm tích hợp Giáo dục địa phương đã bổ sung..."
   ],
-  "lessonPlan": {
-    "id": "lp-integrated-${Date.now()}",
-    "createdAt": "${new Date().toISOString()}",
-    "updatedAt": "${new Date().toISOString()}",
-    "level": "THCS",
-    "subject": "Tên môn học trích xuất từ giáo án gốc",
-    "grade": "Lớp học trích xuất từ giáo án gốc",
-    "textbook": "Bộ sách trích xuất từ giáo án gốc",
-    "info": {
-      "lessonTitle": "Tên bài dạy trích xuất từ giáo án gốc",
-      "topic": "Chủ đề / Chương từ giáo án gốc",
-      "periodNumber": "Tiết 1",
-      "duration": "45 phút",
-      "date": "${new Date().toISOString().split('T')[0]}",
-      "classGroup": "Lớp học",
-      "schoolName": "${schoolName || 'Trường THCS/THPT'}",
-      "teacherName": "${teacherName || 'Giáo viên bộ môn'}",
-      "departmentName": "Tổ chuyên môn"
-    },
-    "objectives": {
-      "qualities": ["Giữ nguyên phẩm chất từ giáo án gốc, chèn thêm phẩm chất tích hợp nếu có..."],
-      "generalCompetencies": ["Giữ nguyên năng lực chung từ giáo án gốc..."],
-      "specificCompetencies": ["Giữ nguyên năng lực đặc thù từ giáo án gốc..."],
-      "requirementsToAchieve": ["Giữ nguyên 100% Yêu cầu cần đạt gốc + bổ sung câu tích hợp mới..."]
-    },
-    "methodologies": {
-      "methods": ["Phương pháp dạy học gốc..."],
-      "techniques": ["Kỹ thuật dạy học gốc..."],
-      "organizationForms": ["Hình thức tổ chức gốc..."]
-    },
-    "equipmentsAndMaterials": {
-      "equipments": ["Giữ nguyên thiết bị giáo viên gốc + bổ sung thiết bị số/tích hợp mới..."],
-      "materials": ["Giữ nguyên học liệu học sinh gốc + bổ sung học liệu mới..."]
-    },
-    "integratedTopics": [${(selectedTopics || []).map((t: string) => `"${t}"`).join(', ')}],
-    "differentiation": {
-      "weakSupport": "Hỗ trợ học sinh cần hỗ trợ...",
-      "averageSupport": "Học sinh trung bình...",
-      "advancedSupport": "Học sinh khá...",
-      "giftedSupport": "Học sinh giỏi/năng khiếu..."
-    },
-    "activities": [
-      {
-        "id": "act-1",
-        "type": "warmup",
-        "name": "Hoạt động 1: Giữ nguyên tên hoạt động gốc",
-        "duration": "Thời gian gốc",
-        "objective": "Giữ nguyên mục tiêu hoạt động gốc + chèn điểm tích hợp mới",
-        "content": "Giữ nguyên 100% nội dung gốc + chèn điểm tích hợp mới",
-        "product": "Giữ nguyên 100% sản phẩm gốc + chèn sản phẩm tích hợp mới",
-        "implementation": {
-          "transfer": "GIỮ NGUYÊN VĂN 100% BƯỚC CHUYỂN GIAO NHIỆM VỤ GỐC + chèn thêm [TÍCH HỢP...]",
-          "execution": "GIỮ NGUYÊN VĂN 100% BƯỚC THỰC HIỆN NHIỆM VỤ GỐC + chèn thêm [TÍCH HỢP...]",
-          "reporting": "GIỮ NGUYÊN VĂN 100% BƯỚC BÁO CÁO THẢO LUẬN GỐC + chèn thêm [TÍCH HỢP...]",
-          "conclusion": "GIỮ NGUYÊN VĂN 100% BƯỚC KẾT LUẬN NHẬN ĐỊNH GỐC + chèn thêm [TÍCH HỢP...]"
-        },
-        "teacherRole": "Lắng nghe, quan sát, hướng dẫn",
-        "studentRole": "Thực hiện nhiệm vụ",
-        "promptsAndQuestions": ["Câu hỏi từ giáo án gốc..."],
-        "anticipatedSituations": "Tình huống dự kiến từ giáo án gốc...",
-        "supportMeasures": "Biện pháp hỗ trợ..."
-      }
-    ],
-    "assessment": {
-      "type": "Hình thức đánh giá gốc + bổ sung...",
-      "details": "Chi tiết đánh giá...",
-      "rubrics": []
-    }
-  }
+  "integratedFullText": "Toàn bộ văn bản giáo án gốc được giữ nguyên 100% tất cả các bài/tiết và được chèn thêm các nhãn [TÍCH HỢP ...]"
 }
 `;
 
