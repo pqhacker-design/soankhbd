@@ -399,6 +399,7 @@ Trả lời tiếng Việt văn minh, dẫn chứng quy định và gợi ý th�
 export async function integrateLessonPlanDirect(payload: any): Promise<any> {
   const ai = getClientGemini();
   const {
+    uploadedHtml,
     uploadedText,
     selectedTopics,
     customInstructions,
@@ -410,39 +411,38 @@ export async function integrateLessonPlanDirect(payload: any): Promise<any> {
     ? selectedTopics.join(', ')
     : 'Năng lực số, Bảo vệ Môi trường, Giáo dục Hướng nghiệp, An toàn giao thông, Giáo dục địa phương';
 
+  const contentToProcess = uploadedHtml || (uploadedText ? uploadedText.split('\n').map((line: string) => `<p>${line}</p>`).join('') : '');
+
   const prompt = `
-Bạn là Chuyên gia Cao cấp về Chuẩn hóa và Tích hợp Giáo dục Phổ thông GDPT 2018 Việt Nam (Công văn 5512/BGDĐT, Công văn 3535).
-
-Dưới đây là NỘI DUNG GIÁO ÁN / TÀI LIỆU DẠY HỌC do giáo viên tải lên (Có thể chứa 1 bài hoặc NHIỀU BÀI / NHIỀU TIẾT / NHIỀU CHƯƠNG theo định dạng riêng của giáo viên):
+Bạn là Chuyên gia Tích hợp Giáo dục. Dưới đây là GIÁO ÁN GỐC do giáo viên tải lên (dạng HTML chứa đầy đủ cấu trúc bảng 1 cột, 2 cột, tiêu đề, danh sách, đoạn văn):
 ================================================================================
-${uploadedText}
+${contentToProcess}
 ================================================================================
 
-NHIỆM VỤ CỦA BẠN:
-1. **BẢO TOÀN NGUYÊN VĂN 100% TOÀN BỘ VĂN BẢN VÀ CẤU TRÚC GIÁO ÁN GỐC**:
-   - Tên bài, các mục I, II, III, IV, các Hoạt động 1, 2, 3, 4, các bước Chuyển giao nhiệm vụ, Thực hiện nhiệm vụ, Báo cáo thảo luận, Kết luận nhận định, Bảng biểu, Dự kiến sản phẩm... PHẢI GIỮ NGUYÊN 100% TỪNG CÂU TỪNG TỪ.
-   - TUYỆT ĐỐI KHÔNG TÓM TẮT, KHÔNG CẮT GIẢM, KHÔNG THAY ĐỔI CẤU TRÚC TÀI LIỆU GỐC.
+YÊU CẦU QUAN TRỌNG VỀ ĐỊNH DẠNG & NỘI DUNG:
+1. **BẢO TOÀN NGUYÊN VẸN 100% CẤU TRÚC BẢNG VÀ VĂN BẢN TÀI LIỆU GỐC**:
+   - Mẫu giáo án tải lên như thế nào thì GIỮ NGUYÊN HOÀN TOÀN NHƯ THẾ ĐÓ (giáo án 1 cột thì để 1 cột, 2 cột thì để 2 cột trong bảng <table>).
+   - Tên bài, các mục, hoạt động, bước thực hiện, dữ liệu câu hỏi, bảng biểu... giữ nguyên 100% từng từ từng chữ.
+   - TUYỆT ĐỐI KHÔNG TÓM TẮT, KHÔNG CẮT GIẢM, KHÔNG ÉP CẢ TÀI LIỆU VÀO MỘT CÔNG VĂN HAY KHUÔN MẪU KHÁC (NHƯ CV 5512 CỦA BỘ).
+   - TÁCH BIỆT HOÀN TOÀN TÍNH NĂNG TÍCH HỢP NÀY VỚI CÁC PHẦN KHÁC CỦA APP. KHÔNG THAY ĐỔI CẤU TRÚC HAY QUY CHUẨN CỦA MẪU GIÁO ÁN ĐÃ UP LÊN.
 
-2. **CHỈ CHÈN THÊM CÁC DÒNG TÍCH HỢP VÀO VỊ TRÍ HỢP LÝ**:
+2. **CHỈ BỔ SUNG NỘI DUNG TÍCH HỢP VÀO CÁC VỊ TRÍ HỢP LÝ**:
    Danh sách chủ đề tích hợp cần chèn: [${topicList}].
-   Chèn dòng chữ nghiêng có dấu sao ngay dưới câu/mục tương ứng theo đúng định dạng minh họa:
-   • *Kỹ năng số: [Nội dung chi tiết về sử dụng thiết bị số, phần mềm, tra cứu, học liệu số...]*
-   • *Môi trường: [Nội dung chi tiết về bảo vệ môi trường, tiết kiệm năng lượng, phân loại rác...]*
-   • *Hướng nghiệp: [Nội dung chi tiết liên hệ ứng dụng ngành nghề thực tế...]*
-   • *An toàn giao thông: [Nội dung chi tiết liên hệ chấp hành luật giao thông...]*
-   • *Giáo dục địa phương: [Nội dung chi tiết liên hệ di sản, lịch sử, văn hóa, danh thắng địa phương...]*
-   • *STEM: [Nội dung chi tiết về vận dụng khoa học, công nghệ, toán học...]* (nếu có)
+   Chèn các dòng chữ nghiêng nổi bật trực tiếp dưới nội dung/hoạt động phù hợp trong các ô bảng (<td>) hoặc đoạn văn (<p>):
+   • <p style="color: #0f766e; font-style: italic; font-weight: bold;">*Kỹ năng số: [nội dung]*</p>
+   • <p style="color: #0f766e; font-style: italic; font-weight: bold;">*Môi trường: [nội dung]*</p>
+   • <p style="color: #0f766e; font-style: italic; font-weight: bold;">*Hướng nghiệp: [nội dung]*</p>
+   • <p style="color: #0f766e; font-style: italic; font-weight: bold;">*An toàn giao thông: [nội dung]*</p>
+   • <p style="color: #0f766e; font-style: italic; font-weight: bold;">*Giáo dục địa phương: [nội dung]*</p>
+   • <p style="color: #0f766e; font-style: italic; font-weight: bold;">*STEM: [nội dung]*</p>
 
-MẪU MINH HỌA VỊ TRÍ CHÈN THỰC TẾ:
---------------------------------------------------
-1. Đối với giáo viên: GV chuẩn bị điện thoại thông minh cài phần mềm Plickers, mã làm bài cho HS...
-*Kỹ năng số: Khai thác phần mềm Plickers để kiểm tra trắc nghiệm nhanh và đánh giá học sinh.*
-
-Bước 1: GV chuyển giao nhiệm vụ học tập
-- GV cho HS thực hiện hoạt động, từ đó dẫn đến quy tắc làm tròn số thập phân...
-*Kỹ năng số: Hướng dẫn HS tra cứu dữ liệu thực tế trên thiết bị số.*
-*Môi trường: Tích hợp bài toán tính toán khối lượng rác thải phát thải hằng ngày.*
---------------------------------------------------
+MẪU VỊ TRÍ CHÈN THỰC TẾ TRONG Ô BẢNG 2 CỘT (HOẶC 1 CỘT):
+<td>
+  <p><strong>Bước 1: GV chuyển giao nhiệm vụ học tập</strong></p>
+  <p>- GV cho HS thực hiện hoạt động, từ đó dẫn đến quy tắc làm tròn số...</p>
+  <p style="color: #0f766e; font-style: italic; font-weight: bold;">*Kỹ năng số: Hướng dẫn HS tra cứu dữ liệu thực tế trên thiết bị số.*</p>
+  <p style="color: #0f766e; font-style: italic; font-weight: bold;">*Môi trường: Tích hợp bài toán tính toán khối lượng rác thải phát thải hằng ngày.*</p>
+</td>
 
 Yêu cầu bổ sung từ giáo viên: ${customInstructions || 'Không có.'}
 
@@ -456,7 +456,8 @@ Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc s
     "Tóm tắt điểm An toàn giao thông đã chèn...",
     "Tóm tắt điểm Giáo dục địa phương đã chèn..."
   ],
-  "integratedFullText": "Toàn bộ văn bản giáo án gốc được giữ nguyên 100% tất cả các bài/tiết và được chèn thêm các dòng *Kỹ năng số: ...*, *Môi trường: ...*, v.v. ở các vị trí thích hợp."
+  "integratedHtml": "Toàn bộ HTML giáo án gốc giữ nguyên 100% bảng biểu 1 cột / 2 cột và được chèn thêm các thẻ <p style='color: #0f766e; font-style: italic; font-weight: bold;'>*Chủ đề: ...*</p> ở vị trí phù hợp.",
+  "integratedFullText": "Văn bản thuần của giáo án đã được chèn nội dung tích hợp."
 }
 `;
 
