@@ -419,39 +419,44 @@ ${uploadedText}
 ================================================================================
 
 NHIỆM VỤ CỦA BẠN:
-1. **BẢO TOÀN NGUYÊN VĂN 100% TOÀN BỘ NỘI DUNG VÀ ĐỊNH DẠNG TÀI LIỆU GỐC**:
-   - Nếu tài liệu chứa 1 bài, 3 bài hay 10 bài -> Giữ lại ĐẦY ĐỦ 100% tất cả các bài, tất cả các tiết, tất cả các đoạn văn, tiêu đề, câu hỏi và nội dung gốc.
-   - TUYỆT ĐỐI KHÔNG TÓM TẮT, KHÔNG CẮT GIẢM, KHÔNG ÉP CẢ TÀI LIỆU VÀO KHUÔN MẪU MỘT BÀI ĐƠN LẺ NẾU CÓ NHIỀU BÀI.
+1. **BẢO TOÀN NGUYÊN VĂN 100% TOÀN BỘ VĂN BẢN VÀ CẤU TRÚC GIÁO ÁN GỐC**:
+   - Tên bài, các mục I, II, III, IV, các Hoạt động 1, 2, 3, 4, các bước Chuyển giao nhiệm vụ, Thực hiện nhiệm vụ, Báo cáo thảo luận, Kết luận nhận định, Bảng biểu, Dự kiến sản phẩm... PHẢI GIỮ NGUYÊN 100% TỪNG CÂU TỪNG TỪ.
+   - TUYỆT ĐỐI KHÔNG TÓM TẮT, KHÔNG CẮT GIẢM, KHÔNG THAY ĐỔI CẤU TRÚC TÀI LIỆU GỐC.
 
-2. **CHỈ CHÈN BỔ SUNG CÁC ĐIỂM TÍCH HỢP VÀO CÁC VỊ TRÍ THÍCH HỢP**:
-   Danh sách các chủ đề tích hợp cần bổ sung: [${topicList}].
-   - **Tích hợp Năng lực số**: Chèn thêm việc sử dụng phần mềm, khai thác học liệu số, ứng dụng CNTT, tra cứu trực tuyến, an toàn mạng.
-   - **Tích hợp Môi trường & Biến đổi khí hậu**: Chèn thêm liên hệ tiết kiệm năng lượng, bảo vệ cảnh quan, phân loại rác, ứng phó biến đổi khí hậu.
-   - **Tích hợp Hướng nghiệp**: Chèn thêm liên hệ định hướng ứng dụng nghề nghiệp tương lai, vị trí công việc thực tế.
-   - **Tích hợp An toàn giao thông**: Chèn thêm tình huống chấp hành luật giao thông, văn hóa giao thông an toàn.
-   - **Tích hợp Giáo dục địa phương**: Chèn thêm liên hệ thực tiễn lịch sử, danh lam thắng cảnh, văn hóa di sản, sản vật, kinh tế xã hội địa phương.
+2. **CHỈ CHÈN THÊM CÁC DÒNG TÍCH HỢP VÀO VỊ TRÍ HỢP LÝ**:
+   Danh sách chủ đề tích hợp cần chèn: [${topicList}].
+   Chèn dòng chữ nghiêng có dấu sao ngay dưới câu/mục tương ứng theo đúng định dạng minh họa:
+   • *Kỹ năng số: [Nội dung chi tiết về sử dụng thiết bị số, phần mềm, tra cứu, học liệu số...]*
+   • *Môi trường: [Nội dung chi tiết về bảo vệ môi trường, tiết kiệm năng lượng, phân loại rác...]*
+   • *Hướng nghiệp: [Nội dung chi tiết liên hệ ứng dụng ngành nghề thực tế...]*
+   • *An toàn giao thông: [Nội dung chi tiết liên hệ chấp hành luật giao thông...]*
+   • *Giáo dục địa phương: [Nội dung chi tiết liên hệ di sản, lịch sử, văn hóa, danh thắng địa phương...]*
+   • *STEM: [Nội dung chi tiết về vận dụng khoa học, công nghệ, toán học...]* (nếu có)
 
-3. **QUY CÁCH CHÈN**:
-   Đặt tất cả các điểm bổ sung trong ngoặc vuông nổi bật:
-   • [TÍCH HỢP NĂNG LỰC SỐ: ...]
-   • [TÍCH HỢP MÔI TRƯỜNG: ...]
-   • [TÍCH HỢP HƯỚNG NGHIỆP: ...]
-   • [TÍCH HỢP AN TOÀN GIAO THÔNG: ...]
-   • [TÍCH HỢP GIÁO DỤC ĐỊA PHƯƠNG: ...]
+MẪU MINH HỌA VỊ TRÍ CHÈN THỰC TẾ:
+--------------------------------------------------
+1. Đối với giáo viên: GV chuẩn bị điện thoại thông minh cài phần mềm Plickers, mã làm bài cho HS...
+*Kỹ năng số: Khai thác phần mềm Plickers để kiểm tra trắc nghiệm nhanh và đánh giá học sinh.*
+
+Bước 1: GV chuyển giao nhiệm vụ học tập
+- GV cho HS thực hiện hoạt động, từ đó dẫn đến quy tắc làm tròn số thập phân...
+*Kỹ năng số: Hướng dẫn HS tra cứu dữ liệu thực tế trên thiết bị số.*
+*Môi trường: Tích hợp bài toán tính toán khối lượng rác thải phát thải hằng ngày.*
+--------------------------------------------------
 
 Yêu cầu bổ sung từ giáo viên: ${customInstructions || 'Không có.'}
 
 Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc sau:
 {
-  "documentTitle": "Tên tổng quan giáo án hoặc tiêu đề các bài trong giáo án gốc",
+  "documentTitle": "Tên tổng quan giáo án hoặc tiêu đề bài học trong tài liệu gốc",
   "integrationSummary": [
-    "Tóm tắt điểm tích hợp Năng lực số đã bổ sung...",
-    "Tóm tắt điểm tích hợp Môi trường đã bổ sung...",
-    "Tóm tắt điểm tích hợp Hướng nghiệp đã bổ sung...",
-    "Tóm tắt điểm tích hợp An toàn giao thông đã bổ sung...",
-    "Tóm tắt điểm tích hợp Giáo dục địa phương đã bổ sung..."
+    "Tóm tắt điểm Kỹ năng số đã chèn...",
+    "Tóm tắt điểm Môi trường đã chèn...",
+    "Tóm tắt điểm Hướng nghiệp đã chèn...",
+    "Tóm tắt điểm An toàn giao thông đã chèn...",
+    "Tóm tắt điểm Giáo dục địa phương đã chèn..."
   ],
-  "integratedFullText": "Toàn bộ văn bản giáo án gốc được giữ nguyên 100% tất cả các bài/tiết và được chèn thêm các nhãn [TÍCH HỢP ...]"
+  "integratedFullText": "Toàn bộ văn bản giáo án gốc được giữ nguyên 100% tất cả các bài/tiết và được chèn thêm các dòng *Kỹ năng số: ...*, *Môi trường: ...*, v.v. ở các vị trí thích hợp."
 }
 `;
 
