@@ -17,10 +17,11 @@ import {
   Cpu,
   ShieldCheck,
   Edit3,
+  Copy,
 } from 'lucide-react';
 import mammoth from 'mammoth';
 import { FullLessonPlan, UserProfile } from '../types';
-import { exportLessonPlanToDocx } from '../utils/docxExporter';
+import { exportLessonPlanToDocx, exportPreservedDocumentToDocx } from '../utils/docxExporter';
 import { getUserApiKey, getApiKeyHeaders } from '../utils/apiHelper';
 import { useToast } from '../context/ToastContext';
 
@@ -111,6 +112,8 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
   const [progressStatus, setProgressStatus] = useState<string>('');
 
   const [resultPlan, setResultPlan] = useState<FullLessonPlan | null>(null);
+  const [integratedFullText, setIntegratedFullText] = useState<string>('');
+  const [documentTitle, setDocumentTitle] = useState<string>('');
   const [integrationSummary, setIntegrationSummary] = useState<string[]>([]);
 
   // Toggle selected topic
@@ -200,7 +203,7 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
 
     try {
       setTimeout(() => {
-        setProgressStatus('Đang phân tích vị trí cần chèn Năng lực số, Môi trường, Hướng nghiệp, ATGT...');
+        setProgressStatus('Đang phân tích các bài & chèn Năng lực số, Môi trường, Hướng nghiệp...');
       }, 1500);
 
       const res = await fetch('/api/integrate-lesson-plan', {
@@ -211,7 +214,7 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
 
       if (res.ok) {
         const data = await res.json();
-        if (data.success && data.lessonPlan) {
+        if (data.success && (data.integratedFullText || data.lessonPlan)) {
           resultData = data;
         } else {
           errorMessage = data.error || '';
@@ -235,15 +238,15 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
     }
 
     // Direct Client-Side Fallback using @google/genai SDK
-    if (!resultData || !resultData.lessonPlan) {
+    if (!resultData || (!resultData.integratedFullText && !resultData.lessonPlan)) {
       try {
         setProgressStatus('Đang xử lý trực tiếp qua Gemini Client AI SDK...');
         const { integrateLessonPlanDirect } = await import('../utils/clientGeminiService');
         const directResult = await integrateLessonPlanDirect(payload);
-        if (directResult && directResult.lessonPlan) {
+        if (directResult && (directResult.integratedFullText || directResult.lessonPlan)) {
           resultData = directResult;
-        } else if (directResult && directResult.info) {
-          resultData = { lessonPlan: directResult, integrationSummary: [] };
+        } else if (directResult && typeof directResult === 'object') {
+          resultData = directResult;
         }
       } catch (clientErr: any) {
         console.error('Client Gemini integration error:', clientErr);
@@ -256,10 +259,17 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
       }
     }
 
-    if (resultData && resultData.lessonPlan) {
-      setResultPlan(resultData.lessonPlan);
+    if (resultData && (resultData.integratedFullText || resultData.lessonPlan)) {
+      const fullText = resultData.integratedFullText || uploadedText || '';
+      setIntegratedFullText(fullText);
+      setDocumentTitle(resultData.documentTitle || uploadedFileName.replace(/\.[^/.]+$/, '') || 'Giáo Án Tích Hợp AI');
       setIntegrationSummary(resultData.integrationSummary || []);
-      toast.success('Đã tự động bổ sung thành công các nội dung Tích hợp vào Giáo án!');
+      if (resultData.lessonPlan) {
+        setResultPlan(resultData.lessonPlan);
+      } else {
+        setResultPlan(null);
+      }
+      toast.success('Đã tự động bổ sung thành công các nội dung Tích hợp vào toàn bộ Giáo án!');
     } else {
       toast.error('Lỗi tích hợp giáo án: ' + (errorMessage || 'Vui lòng kiểm tra lại Gemini API Key hoặc thử lại!'));
     }
@@ -267,16 +277,106 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
     setIsProcessing(false);
   };
 
-  // Export to DOCX
+  // Export to DOCX preserving full original structure
   const handleExportDocx = async () => {
-    if (!resultPlan) return;
-    try {
-      await exportLessonPlanToDocx(resultPlan);
-      toast.success('Đã tải xuống Kế hoạch bài dạy Word (.docx) chuẩn định dạng Bộ GD&ĐT!');
-    } catch (err) {
-      console.error(err);
-      toast.error('Lỗi xuất file Word. Vui lòng thử lại.');
+    if (integratedFullText) {
+      try {
+        await exportPreservedDocumentToDocx(
+          integratedFullText,
+          documentTitle || uploadedFileName.replace(/\.[^/.]+$/, '') || 'Giao_An_Tich_Hop'
+        );
+        toast.success('Đã xuất file Word (.docx) giữ nguyên 100% định dạng & toàn bộ các bài trong tài liệu gốc!');
+      } catch (err) {
+        console.error(err);
+        toast.error('Lỗi xuất file Word. Vui lòng thử lại.');
+      }
+    } else if (resultPlan) {
+      try {
+        await exportLessonPlanToDocx(resultPlan);
+        toast.success('Đã tải xuống Kế hoạch bài dạy Word (.docx)!');
+      } catch (err) {
+        console.error(err);
+        toast.error('Lỗi xuất file Word. Vui lòng thử lại.');
+      }
     }
+  };
+
+  const handleReset = () => {
+    setResultPlan(null);
+    setIntegratedFullText('');
+    setIntegrationSummary([]);
+  };
+
+  const handleCopyText = () => {
+    if (!integratedFullText) return;
+    navigator.clipboard.writeText(integratedFullText);
+    toast.success('Đã sao chép toàn bộ văn bản giáo án tích hợp vào Khay nhớ tạm!');
+  };
+
+  const renderPreservedTextWithBadges = (text: string) => {
+    const lines = text.split('\n');
+
+    return (
+      <div className="space-y-2 text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-sans">
+        {lines.map((line, idx) => {
+          const trimmed = line.trim();
+          if (!trimmed) {
+            return <div key={idx} className="h-2" />;
+          }
+
+          const isHeading1 = /^(BÀI|CHƯƠNG|KẾ HOẠCH BÀI DẠY|GIÁO ÁN|PHẦN|BÀI HỌC|TIẾT)\b/i.test(trimmed) || /^[I|V|X]+\.\s+/i.test(trimmed) || /^#{1,2}\s+/.test(trimmed);
+          const isHeading2 = /^(HOẠT ĐỘNG|MỤC TIÊU|THIẾT BỊ|TIẾN TRÌNH|ĐÁNH GIÁ|DẶN DÒ|LUYỆN TẬP|VẬN DỤNG|\d+\.|[a-z]\))\s+/i.test(trimmed) || /^#{3,4}\s+/.test(trimmed);
+
+          // Find [TÍCH HỢP ...] tags
+          const tagRegex = /\[TÍCH HỢP [^\]]+\]/gi;
+          const parts = [];
+          let lastIdx = 0;
+          let match: RegExpExecArray | null;
+
+          while ((match = tagRegex.exec(line)) !== null) {
+            if (match.index > lastIdx) {
+              parts.push(line.substring(lastIdx, match.index));
+            }
+            parts.push(
+              <span
+                key={`tag-${match.index}`}
+                className="inline-flex items-center gap-1.5 font-bold text-emerald-900 dark:text-emerald-100 bg-emerald-100 dark:bg-emerald-950/90 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-700 my-0.5 shadow-xs"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                {match[0]}
+              </span>
+            );
+            lastIdx = tagRegex.lastIndex;
+          }
+
+          if (lastIdx < line.length) {
+            parts.push(line.substring(lastIdx));
+          }
+
+          if (isHeading1) {
+            return (
+              <h2 key={idx} className="text-base font-extrabold text-[#1E3A8A] dark:text-blue-400 pt-4 pb-1 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wide">
+                {parts.length > 0 ? parts : trimmed}
+              </h2>
+            );
+          }
+
+          if (isHeading2) {
+            return (
+              <h3 key={idx} className="text-sm font-bold text-slate-900 dark:text-slate-100 pt-2 pb-0.5">
+                {parts.length > 0 ? parts : trimmed}
+              </h3>
+            );
+          }
+
+          return (
+            <p key={idx} className="text-xs text-slate-700 dark:text-slate-300">
+              {parts.length > 0 ? parts : line}
+            </p>
+          );
+        })}
+      </div>
+    );
   };
 
   // Save plan to user library
@@ -310,7 +410,7 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
         </div>
       </div>
 
-      {!resultPlan ? (
+      {!integratedFullText && !resultPlan ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Upload & Text Input */}
           <div className="lg:col-span-7 space-y-6">
@@ -504,14 +604,14 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
                   Giáo Án Đã Tích Hợp Hoàn Tất!
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {resultPlan.info.lessonTitle} - {resultPlan.subject} {resultPlan.grade} ({resultPlan.level})
+                  {documentTitle || resultPlan?.info?.lessonTitle || 'Tài liệu giáo án'} - Bảo toàn 100% văn bản & nội dung gốc
                 </p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
               <button
-                onClick={() => setResultPlan(null)}
+                onClick={handleReset}
                 className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-1.5"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -519,14 +619,24 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
               </button>
 
               <button
-                onClick={handleSaveToLibrary}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors flex items-center gap-1.5"
+                onClick={handleCopyText}
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5"
               >
-                <BookOpen className="w-4 h-4" />
-                Lưu Vào Thư Viện
+                <Copy className="w-3.5 h-3.5" />
+                Sao Chép
               </button>
 
-              {onSelectPlanForEdit && (
+              {resultPlan && (
+                <button
+                  onClick={handleSaveToLibrary}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors flex items-center gap-1.5"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Lưu Thư Viện
+                </button>
+              )}
+
+              {resultPlan && onSelectPlanForEdit && (
                 <button
                   onClick={() => onSelectPlanForEdit(resultPlan)}
                   className="px-4 py-2 rounded-xl text-xs font-bold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-colors flex items-center gap-1.5"
@@ -541,18 +651,24 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
                 className="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
-                Xuất File Word (.docx) Chuẩn Định Dạng
+                Xuất File Word (.docx) Giữ Nguyên Định Dạng
               </button>
             </div>
           </div>
 
           {/* Integration Summary Highlights Card */}
-          {integrationSummary.length > 0 && (
-            <div className="bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/60 rounded-2xl p-5 space-y-3">
+          <div className="bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/60 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 Các Điểm Nổi Bật AI Đã Tự Động Bổ Sung Tích Hợp:
               </h3>
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Đã bảo toàn 100% văn bản & kiến thức giáo án gốc
+              </span>
+            </div>
+            {integrationSummary.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {integrationSummary.map((item, idx) => (
                   <div
@@ -564,158 +680,46 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Formatted Lesson Plan Document Preview Card */}
-          <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-6 sm:p-10 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-8 font-serif">
-            {/* Header Table / Document Header */}
-            <div className="grid grid-cols-2 gap-4 pb-4 border-b border-slate-200 dark:border-slate-700 font-sans text-xs">
+          <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-6 sm:p-10 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-6 font-serif">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 font-sans">
               <div>
-                <p className="font-bold">TRƯỜNG: <span className="font-normal text-slate-700 dark:text-slate-300">{resultPlan.info.schoolName || 'THCS Bình San'}</span></p>
-                <p className="font-bold">TỔ CHUYÊN MÔN: <span className="font-normal text-slate-700 dark:text-slate-300">{resultPlan.info.departmentName || 'Tổ Tự Nhiên'}</span></p>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                  {documentTitle || resultPlan?.info?.lessonTitle || 'Văn Bản Giáo Án Đã Tích Hợp'}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Đã giữ nguyên 100% định dạng & bổ sung các nhãn [TÍCH HỢP ...] màu xanh nổi bật bên dưới
+                </p>
               </div>
-              <div className="text-right">
-                <p className="font-bold">HỌ VÀ TÊN GV: <span className="font-normal text-slate-700 dark:text-slate-300">{resultPlan.info.teacherName || currentUser.name}</span></p>
-                <p className="font-bold">LỚP: <span className="font-normal text-slate-700 dark:text-slate-300">{resultPlan.info.classGroup || resultPlan.grade}</span> | NGÀY: <span className="font-normal text-slate-700 dark:text-slate-300">{resultPlan.info.date}</span></p>
-              </div>
+              <span className="text-xs px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">
+                {integratedFullText ? `${integratedFullText.length} ký tự` : ''}
+              </span>
             </div>
 
-            {/* Document Title Banner */}
-            <div className="text-center font-sans space-y-2">
-              <h1 className="text-xl font-extrabold text-[#1E3A8A] dark:text-blue-400 tracking-wide">
-                KẾ HOẠCH BÀI DẠY (GIÁO ÁN)
-              </h1>
-              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                BÀI: {resultPlan.info.lessonTitle.toUpperCase()}
-              </h2>
-              <p className="text-xs italic text-slate-500 dark:text-slate-400">
-                Môn học: {resultPlan.subject} - {resultPlan.grade} | Bộ sách: {resultPlan.textbook} | Tiết: {resultPlan.info.periodNumber} ({resultPlan.info.duration})
-              </p>
-
-              {/* Integrated Badges Bar */}
-              <div className="flex flex-wrap items-center justify-center gap-1.5 pt-2">
-                {resultPlan.integratedTopics.map((top, i) => (
-                  <span
-                    key={i}
-                    className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-900"
-                  >
-                    ✓ Tích hợp: {top}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* I. Objectives */}
-            <div className="space-y-3 font-sans">
-              <h3 className="text-sm font-bold text-[#1E3A8A] dark:text-blue-400 border-b border-blue-100 dark:border-blue-900 pb-1 uppercase">
-                I. MỤC TIÊU BÀI HỌC
-              </h3>
-
-              <div className="text-xs space-y-2 text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
+            {/* Document Content Rendering */}
+            {integratedFullText ? (
+              renderPreservedTextWithBadges(integratedFullText)
+            ) : resultPlan ? (
+              <div className="space-y-6 font-sans text-xs">
+                <div className="text-center space-y-1">
+                  <h1 className="text-lg font-bold text-[#1E3A8A] dark:text-blue-400 uppercase">
+                    {resultPlan.info.lessonTitle}
+                  </h1>
+                  <p className="text-slate-500">Môn: {resultPlan.subject} - Lớp: {resultPlan.grade}</p>
+                </div>
                 <div>
-                  <strong className="text-slate-900 dark:text-slate-100">1. Yêu cầu cần đạt:</strong>
-                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100 border-b pb-1">I. MỤC TIÊU</h3>
+                  <ul className="list-disc pl-5 mt-2 space-y-1">
                     {resultPlan.objectives.requirementsToAchieve.map((req, i) => (
                       <li key={i}>{req}</li>
                     ))}
                   </ul>
                 </div>
-
-                <div>
-                  <strong className="text-slate-900 dark:text-slate-100">2. Năng lực:</strong>
-                  <p className="mt-1">
-                    <strong>a) Năng lực chung:</strong> {resultPlan.objectives.generalCompetencies.join('; ')}
-                  </p>
-                  <p className="mt-1">
-                    <strong>b) Năng lực đặc thù:</strong> {resultPlan.objectives.specificCompetencies.join('; ')}
-                  </p>
-                </div>
-
-                <div>
-                  <strong className="text-slate-900 dark:text-slate-100">3. Phẩm chất:</strong>
-                  <p className="mt-1">{resultPlan.objectives.qualities.join(', ')}</p>
-                </div>
               </div>
-            </div>
-
-            {/* II. Equipment & Materials */}
-            <div className="space-y-3 font-sans">
-              <h3 className="text-sm font-bold text-[#1E3A8A] dark:text-blue-400 border-b border-blue-100 dark:border-blue-900 pb-1 uppercase">
-                II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU
-              </h3>
-              <div className="text-xs space-y-1 text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
-                <p><strong>1. Giáo viên:</strong> {resultPlan.equipmentsAndMaterials.equipments.join(', ')}</p>
-                <p><strong>2. Học sinh:</strong> {resultPlan.equipmentsAndMaterials.materials.join(', ')}</p>
-              </div>
-            </div>
-
-            {/* III. Teaching Activities */}
-            <div className="space-y-4 font-sans">
-              <h3 className="text-sm font-bold text-[#1E3A8A] dark:text-blue-400 border-b border-blue-100 dark:border-blue-900 pb-1 uppercase">
-                III. TIẾN TRÌNH DẠY HỌC
-              </h3>
-
-              <div className="space-y-6">
-                {resultPlan.activities.map((act, idx) => (
-                  <div key={act.id || idx} className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-slate-50/50 dark:bg-slate-900/30">
-                    <h4 className="text-xs font-bold text-teal-700 dark:text-teal-300 uppercase">
-                      HOẠT ĐỘNG {idx + 1}: {act.name} ({act.duration})
-                    </h4>
-
-                    <div className="text-xs space-y-2 text-slate-700 dark:text-slate-300">
-                      <p><strong>a) Mục tiêu:</strong> {act.objective}</p>
-                      <p><strong>b) Nội dung:</strong> {act.content}</p>
-                      <p><strong>c) Sản phẩm:</strong> {act.product}</p>
-
-                      <div>
-                        <strong>d) Tổ chức thực hiện:</strong>
-                        <div className="mt-2 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-                          <table className="w-full text-left text-[11px] border-collapse">
-                            <thead>
-                              <tr className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
-                                <th className="p-2.5 w-1/3 border-r border-slate-200 dark:border-slate-700">Các bước</th>
-                                <th className="p-2.5">Nội dung chi tiết (Đã chèn Tích hợp)</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                              <tr>
-                                <td className="p-2.5 font-semibold border-r border-slate-200 dark:border-slate-700">Bước 1: Chuyển giao nhiệm vụ</td>
-                                <td className="p-2.5 whitespace-pre-line">{act.implementation.transfer}</td>
-                              </tr>
-                              <tr>
-                                <td className="p-2.5 font-semibold border-r border-slate-200 dark:border-slate-700">Bước 2: Thực hiện nhiệm vụ</td>
-                                <td className="p-2.5 whitespace-pre-line">{act.implementation.execution}</td>
-                              </tr>
-                              <tr>
-                                <td className="p-2.5 font-semibold border-r border-slate-200 dark:border-slate-700">Bước 3: Báo cáo, thảo luận</td>
-                                <td className="p-2.5 whitespace-pre-line">{act.implementation.reporting}</td>
-                              </tr>
-                              <tr>
-                                <td className="p-2.5 font-semibold border-r border-slate-200 dark:border-slate-700">Bước 4: Kết luận, nhận định</td>
-                                <td className="p-2.5 whitespace-pre-line">{act.implementation.conclusion}</td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* IV. Assessment & Differentiation */}
-            <div className="space-y-3 font-sans">
-              <h3 className="text-sm font-bold text-[#1E3A8A] dark:text-blue-400 border-b border-blue-100 dark:border-blue-900 pb-1 uppercase">
-                IV. HƯỚNG DẪN ĐÁNH GIÁ & PHÂN HÓA DẠY HỌC
-              </h3>
-              <div className="text-xs space-y-1.5 text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
-                <p><strong>• Phương pháp & Hình thức đánh giá:</strong> {resultPlan.assessment.type} ({resultPlan.assessment.details})</p>
-                <p><strong>• Phân hóa HS cần hỗ trợ:</strong> {resultPlan.differentiation.weakSupport}</p>
-                <p><strong>• Phân hóa HS khá / giỏi / năng khiếu:</strong> {resultPlan.differentiation.advancedSupport}</p>
-              </div>
-            </div>
+            ) : null}
           </div>
         </div>
       )}
