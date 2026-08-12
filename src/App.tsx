@@ -454,6 +454,7 @@ export default function App() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           savedCount={lessonPlans.length}
+          currentUser={currentUser}
           onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
         />
 
@@ -523,7 +524,7 @@ export default function App() {
 
           {activeTab === 'chat' && <AiChatAdvisorModal />}
 
-          {activeTab === 'admin' && (
+          {activeTab === 'admin' && (currentUser.role === 'Admin' || currentUser.email.trim().toLowerCase() === 'pqhacker@gmail.com') && (
             <AdminManagementView
               currentUser={currentUser}
               users={users}
