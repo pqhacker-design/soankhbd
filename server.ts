@@ -620,7 +620,7 @@ Trả về định dạng JSON duy nhất:
   }
 });
 
-// API: Auto-integrate topics (Digital Competencies, Environment, Career, Traffic Safety, Local Education) into Uploaded Lesson Plan
+// API: Auto-integrate topics into Uploaded Lesson Plan with strict preservation
 app.post('/api/integrate-lesson-plan', async (req, res) => {
   try {
     const ai = getGeminiClient(req);
@@ -629,61 +629,60 @@ app.post('/api/integrate-lesson-plan', async (req, res) => {
       uploadedText,
       selectedTopics,
       customInstructions,
+      integrationRequirements,
       schoolName,
       teacherName,
     } = req.body;
 
     const topicList = (selectedTopics && selectedTopics.length > 0)
       ? selectedTopics.join(', ')
-      : 'Năng lực số, Bảo vệ Môi trường, Giáo dục Hướng nghiệp, An toàn giao thông, Giáo dục địa phương';
+      : 'An toàn giao thông, Giáo dục bảo vệ môi trường, Kỹ năng số';
 
     const contentToProcess = uploadedHtml || (uploadedText ? uploadedText.split('\n').map((line: string) => `<p>${line}</p>`).join('') : '');
 
     const prompt = `
-Bạn là Chuyên gia Tích hợp Giáo dục. Dưới đây là GIÁO ÁN GỐC do giáo viên tải lên (dạng HTML chứa đầy đủ cấu trúc bảng 1 cột, 2 cột, tiêu đề, danh sách, đoạn văn):
+Bạn là Chuyên gia Tích hợp Giáo dục GDPT 2018. Dưới đây là TÀI LIỆU KHBD GỐC do giáo viên tải lên:
 ================================================================================
 ${contentToProcess}
 ================================================================================
 
-YÊU CẦU QUAN TRỌNG VỀ ĐỊNH DẠNG & NỘI DUNG:
-1. **BẢO TOÀN NGUYÊN VẸN 100% CẤU TRÚC BẢNG VÀ VĂN BẢN TÀI LIỆU GỐC**:
-   - Mẫu giáo án tải lên như thế nào thì GIỮ NGUYÊN HOÀN TOÀN NHƯ THẾ ĐÓ (giáo án 1 cột thì để 1 cột, 2 cột thì để 2 cột trong bảng <table>).
-   - Tên bài, các mục, hoạt động, bước thực hiện, dữ liệu câu hỏi, bảng biểu... giữ nguyên 100% từng từ từng chữ.
-   - TUYỆT ĐỐI KHÔNG TÓM TẮT, KHÔNG CẮT GIẢM, KHÔNG ÉP CẢ TÀI LIỆU VÀO MỘT CÔNG VĂN HAY KHUÔN MẪU KHÁC (NHƯ CV 5512 CỦA BỘ).
-   - TÁCH BIỆT HOÀN TOÀN TÍNH NĂNG TÍCH HỢP NÀY VỚI CÁC PHẦN KHÁC CỦA APP. KHÔNG THAY ĐỔI CẤU TRÚC HAY QUY CHUẨN CỦA MẪU GIÁO ÁN ĐÃ UP LÊN.
+QUY TẮC BẮT BUỘC (PRESERVE -> ANALYZE -> LOCATE -> GENERATE -> INSERT -> VERIFY):
+1. **TUYỆT ĐỐI BẢO TOÀN NGUYÊN VẸN 100% KHBD GỐC**:
+   - File KHBD hiện có là nội dung NGUỒN BẤT BIẾN (read-only).
+   - KHÔNG ĐƯỢC làm thay đổi, sửa, xóa, viết lại, tóm tắt hoặc định dạng lại bất kỳ từ ngữ, câu chữ, tiêu đề, mục, bảng biểu hay số thứ tự nào của KHBD gốc.
+   - Giữ nguyên 100% cấu trúc bảng (1 cột, 2 cột...), thứ tự các bước và dữ liệu ban đầu.
 
-2. **CHỈ BỔ SUNG NỘI DUNG TÍCH HỢP VÀO CÁC VỊ TRÍ HỢP LÝ**:
-   Danh sách chủ đề tích hợp cần chèn: [${topicList}].
-   Chèn các dòng chữ nghiêng nổi bật trực tiếp dưới nội dung/hoạt động phù hợp trong các ô bảng (<td>) hoặc đoạn văn (<p>):
-   • <p style="color: #0f766e; font-style: italic; font-weight: bold;">*Kỹ năng số: [nội dung]*</p>
-   • <p style="color: #0f766e; font-style: italic; font-weight: bold;">*Môi trường: [nội dung]*</p>
-   • <p style="color: #0f766e; font-style: italic; font-weight: bold;">*Hướng nghiệp: [nội dung]*</p>
-   • <p style="color: #0f766e; font-style: italic; font-weight: bold;">*An toàn giao thông: [nội dung]*</p>
-   • <p style="color: #0f766e; font-style: italic; font-weight: bold;">*Giáo dục địa phương: [nội dung]*</p>
-   • <p style="color: #0f766e; font-style: italic; font-weight: bold;">*STEM: [nội dung]*</p>
+2. **CHỈ THỰC HIỆN THAO TÁC INSERT (CHÈN THÊM)**:
+   - Các chủ đề tích hợp yêu cầu: [${topicList}].
+   - Yêu cầu tích hợp cụ thể từ giáo viên: "${integrationRequirements || customInstructions || 'Tích hợp nhẹ nhàng, tự nhiên vào các hoạt động dạy học phù hợp'}".
+   - Xác định đúng vị trí phù hợp nhất trong tiến trình dạy học (Khởi động, Khám phá, Luyện tập, Vận dụng) để chèn nội dung.
+   - Tất cả nội dung chèn thêm BẮT BUỘC phải có nhãn nhận diện rõ ràng theo cú pháp:
+     <p style="color: #0f766e; background-color: #f0fdf4; border-left: 3px solid #10b981; padding: 6px 10px; margin: 6px 0; font-weight: 600;">
+       <strong>[TÍCH HỢP TÊN_CHỦ_ĐỀ]</strong> Nội dung tích hợp chèn thêm...
+     </p>
+     Ví dụ: [TÍCH HỢP AN TOÀN GIAO THÔNG], [TÍCH HỢP BẢO VỆ MÔI TRƯỜNG], [TÍCH HỢP KỸ NĂNG SỐ], [TÍCH HỢP HƯỚNG NGHIỆP], [TÍCH HỢP GIÁO DỤC PHÁP LUẬT], [TÍCH HỢP STEM], v.v.
 
-MẪU VỊ TRÍ CHÈN THỰC TẾ TRONG Ô BẢNG 2 CỘT (HOẶC 1 CỘT):
-<td>
-  <p><strong>Bước 1: GV chuyển giao nhiệm vụ học tập</strong></p>
-  <p>- GV cho HS thực hiện hoạt động, từ đó dẫn đến quy tắc làm tròn số...</p>
-  <p style="color: #0f766e; font-style: italic; font-weight: bold;">*Kỹ năng số: Hướng dẫn HS tra cứu dữ liệu thực tế trên thiết bị số.*</p>
-  <p style="color: #0f766e; font-style: italic; font-weight: bold;">*Môi trường: Tích hợp bài toán tính toán khối lượng rác thải phát thải hằng ngày.*</p>
-</td>
+3. **KHÔNG TÍCH HỢP GƯỢNG ÉP**:
+   - Nếu chủ đề tích hợp nào KHÔNG phù hợp với ngữ cảnh bài học, KHÔNG được gượng ép chèn bừa bãi.
+   - Liệt kê các chủ đề chưa phù hợp đó vào mảng "unsuitableTopics" kèm lý do và đề xuất giải pháp.
 
-Yêu cầu bổ sung từ giáo viên: ${customInstructions || 'Không có.'}
-
-Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc sau:
+Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc:
 {
-  "documentTitle": "Tên tổng quan giáo án hoặc tiêu đề bài học trong tài liệu gốc",
+  "documentTitle": "Tiêu đề bài dạy hoặc tên tài liệu gốc",
   "integrationSummary": [
-    "Tóm tắt điểm Kỹ năng số đã chèn...",
-    "Tóm tắt điểm Môi trường đã chèn...",
-    "Tóm tắt điểm Hướng nghiệp đã chèn...",
-    "Tóm tắt điểm An toàn giao thông đã chèn...",
-    "Tóm tắt điểm Giáo dục địa phương đã chèn..."
+    "Tóm tắt 1: [TÍCH HỢP AN TOÀN GIAO THÔNG] Đã chèn vào Hoạt động Khởi động...",
+    "Tóm tắt 2: [TÍCH HỢP KỸ NĂNG SỐ] Đã chèn vào Hoạt động Luyện tập..."
   ],
-  "integratedHtml": "Toàn bộ HTML giáo án gốc giữ nguyên 100% bảng biểu 1 cột / 2 cột và được chèn thêm các thẻ <p style='color: #0f766e; font-style: italic; font-weight: bold;'>*Chủ đề: ...*</p> ở vị trí phù hợp.",
-  "integratedFullText": "Văn bản thuần của giáo án đã được chèn nội dung tích hợp."
+  "unsuitableTopics": [
+    { "topic": "Tên chủ đề chưa phù hợp", "reason": "Lý do chưa phù hợp", "suggestion": "Đề xuất gợi ý" }
+  ],
+  "verificationChecks": [
+    "CHECK 1: Bảo toàn 100% văn bản & bảng biểu KHBD gốc (0 ký tự gốc bị xóa hoặc sửa)",
+    "CHECK 2: Đã đánh dấu nhãn [TÍCH HỢP ...] rõ ràng cho từng nội dung bổ sung",
+    "CHECK 3: Vị trí chèn tự nhiên, phù hợp với tiến trình bài dạy"
+  ],
+  "integratedHtml": "Toàn bộ HTML giáo án gốc giữ nguyên 100% và được chèn thêm các thẻ <p> [TÍCH HỢP ...] </p> ở vị trí phù hợp.",
+  "integratedFullText": "Văn bản thuần của giáo án đã tích hợp."
 }
 `;
 
@@ -700,6 +699,91 @@ Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc s
     res.json({ success: true, ...result });
   } catch (error: any) {
     console.error('Error integrating lesson plan:', error);
+    const formattedMsg = formatGeminiError(error);
+    const isMissing = formattedMsg.includes('MISSING_API_KEY') || formattedMsg.includes('API Key');
+    res.status(isMissing ? 400 : 500).json({
+      success: false,
+      apiKeyRequired: isMissing,
+      error: formattedMsg,
+    });
+  }
+});
+
+// API: Propose Integration Locations (Proposal Mode)
+app.post('/api/propose-lesson-integration', async (req, res) => {
+  try {
+    const ai = getGeminiClient(req);
+    const {
+      uploadedHtml,
+      uploadedText,
+      selectedTopics,
+      customInstructions,
+      integrationRequirements,
+    } = req.body;
+
+    const topicList = (selectedTopics && selectedTopics.length > 0)
+      ? selectedTopics.join(', ')
+      : 'An toàn giao thông, Giáo dục bảo vệ môi trường, Kỹ năng số';
+
+    const contentToProcess = uploadedHtml || (uploadedText ? uploadedText.split('\n').map((line: string) => `<p>${line}</p>`).join('') : '');
+
+    const prompt = `
+Bạn là Chuyên gia Đánh giá & Phân tích Giáo án. Dưới đây là KHBD GỐC do giáo viên tải lên:
+================================================================================
+${contentToProcess}
+================================================================================
+
+Danh sách chủ đề yêu cầu tích hợp: [${topicList}].
+Yêu cầu cụ thể từ giáo viên: "${integrationRequirements || customInstructions || 'Đề xuất các điểm tích hợp hợp lý nhất'}".
+
+Hãy phân tích KHBD gốc và đưa ra DÀN ĐỀ XUẤT VỊ TRÍ TÍCH HỢP trước khi thực hiện chèn chính thức.
+
+Trả về duy nhất đối tượng JSON chuẩn:
+{
+  "documentTitle": "Tiêu đề bài học / giáo án",
+  "detectedSections": [
+    "Khởi động / Mở đầu",
+    "Hình thành kiến thức mới / Khám phá",
+    "Luyện tập",
+    "Vận dụng"
+  ],
+  "proposals": [
+    {
+      "id": "prop-1",
+      "locationName": "Hoạt động 2: Khám phá kiến thức - Trạm 1",
+      "topicTag": "[TÍCH HỢP KỸ NĂNG SỐ]",
+      "reason": "Hoạt động đang yêu cầu học sinh làm việc với số liệu, phù hợp để hướng dẫn học sinh thao tác phần mềm tra cứu trực tuyến.",
+      "proposedInsertText": "GV đặt câu hỏi mở rộng: Hướng dẫn HS sử dụng thiết bị số để tra cứu thông tin chính thống về chủ đề.",
+      "status": "pending"
+    },
+    {
+      "id": "prop-2",
+      "locationName": "Hoạt động 4: Vận dụng",
+      "topicTag": "[TÍCH HỢP BẢO VỆ MÔI TRƯỜNG]",
+      "reason": "Hoạt động vận dụng yêu cầu giải quyết bài toán thực tế, rất thích hợp để lồng ghép hành động bảo vệ môi trường.",
+      "proposedInsertText": "GV giao nhiệm vụ liên hệ: Hãy đề xuất 2 giải pháp giảm thiểu chất thải nhựa trong gia đình em.",
+      "status": "pending"
+    }
+  ],
+  "unsuitableTopics": [
+    { "topic": "Tên chủ đề chưa phù hợp", "reason": "Lý do chưa tìm thấy vị trí tự nhiên trong bài này", "suggestion": "Đề xuất lồng ghép ngoại khóa hoặc tiết học sau" }
+  ]
+}
+`;
+
+    const response = await generateContentWithRetry(ai, {
+      model: 'gemini-3.6-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+      },
+    });
+
+    const jsonText = response.text || '{}';
+    const result = cleanAndParseJson(jsonText);
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    console.error('Error proposing lesson integration:', error);
     const formattedMsg = formatGeminiError(error);
     const isMissing = formattedMsg.includes('MISSING_API_KEY') || formattedMsg.includes('API Key');
     res.status(isMissing ? 400 : 500).json({
