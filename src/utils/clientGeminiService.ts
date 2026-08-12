@@ -54,12 +54,14 @@ export async function generateContentWithRetryDirect(
     contents: any;
     config?: any;
   },
-  maxRetries = 2
+  maxRetries = 1
 ): Promise<any> {
+  const requestedModel = (params.model && params.model !== 'gemini-3.6-flash') ? params.model : 'gemini-2.5-flash';
   const modelsToTry = [
-    params.model || 'gemini-3.6-flash',
+    requestedModel,
     'gemini-2.5-flash',
     'gemini-2.0-flash',
+    'gemini-1.5-flash',
   ];
   const uniqueModels = Array.from(new Set(modelsToTry));
 
@@ -69,7 +71,7 @@ export async function generateContentWithRetryDirect(
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         if (attempt > 0) {
-          await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
+          await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
         }
 
         const response = await ai.models.generateContent({
@@ -85,6 +87,12 @@ export async function generateContentWithRetryDirect(
 
         if (errMsg.includes('MISSING_API_KEY') || errMsg.includes('API key not valid') || errMsg.includes('API_KEY_INVALID')) {
           throw new Error(formatGeminiError(err));
+        }
+
+        // If model doesn't exist or not supported, break out immediately to try next model
+        if (errMsg.includes('not found') || errMsg.includes('404') || errMsg.includes('INVALID_ARGUMENT') || errMsg.includes('is not supported')) {
+          console.warn(`[Client Gemini Retry] Model ${modelName} not supported/not found, trying next model...`);
+          break;
         }
 
         console.warn(`[Client Gemini Retry] Model ${modelName} attempt ${attempt + 1} error: ${errMsg.slice(0, 150)}`);
@@ -352,8 +360,8 @@ TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON VỚI CẤU TRÚC:
   }
   geminiContents.push({ text: prompt });
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3.6-flash',
+  const response = await generateContentWithRetryDirect(ai, {
+    model: 'gemini-2.5-flash',
     contents: geminiContents.length === 1 ? prompt : geminiContents,
     config: { responseMimeType: 'application/json' },
   });
@@ -392,8 +400,8 @@ TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON:
     contents = [promptText];
   }
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3.6-flash',
+  const response = await generateContentWithRetryDirect(ai, {
+    model: 'gemini-2.5-flash',
     contents,
     config: { responseMimeType: 'application/json' },
   });
@@ -444,8 +452,8 @@ Trả về JSON duy nhất:
 }
 `;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3.6-flash',
+  const response = await generateContentWithRetryDirect(ai, {
+    model: 'gemini-2.5-flash',
     contents: prompt,
     config: { responseMimeType: 'application/json' },
   });
@@ -472,8 +480,8 @@ Câu hỏi: "${query}"
 Trả lời tiếng Việt văn minh, dẫn chứng quy định và gợi ý thực tiễn.
 `;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3.6-flash',
+  const response = await generateContentWithRetryDirect(ai, {
+    model: 'gemini-2.5-flash',
     contents: prompt,
   });
 
@@ -539,13 +547,12 @@ Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc:
     "CHECK 2: Đã đánh dấu nhãn [TÍCH HỢP ...] rõ ràng cho từng nội dung bổ sung",
     "CHECK 3: Vị trí chèn tự nhiên, phù hợp với tiến trình bài dạy"
   ],
-  "integratedHtml": "Toàn bộ HTML giáo án gốc giữ nguyên 100% và được chèn thêm các thẻ <p> [TÍCH HỢP ...] </p> ở vị trí phù hợp.",
-  "integratedFullText": "Văn bản thuần của giáo án đã tích hợp."
+  "integratedHtml": "Toàn bộ HTML giáo án gốc giữ nguyên 100% và được chèn thêm các thẻ <p> [TÍCH HỢP ...] </p> ở vị trí phù hợp."
 }
 `;
 
   const response = await generateContentWithRetryDirect(ai, {
-    model: 'gemini-3.6-flash',
+    model: 'gemini-2.5-flash',
     contents: prompt,
     config: {
       responseMimeType: 'application/json',
@@ -553,7 +560,13 @@ Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc:
   });
 
   const jsonText = response.text || '{}';
-  return cleanAndParseJson(jsonText);
+  const result = cleanAndParseJson(jsonText);
+
+  if (result.integratedHtml && !result.integratedFullText) {
+    result.integratedFullText = result.integratedHtml.replace(/<[^>]+>/g, '\n').replace(/\n+/g, '\n').trim();
+  }
+
+  return result;
 }
 
 export async function proposeLessonIntegrationDirect(payload: any): Promise<any> {
@@ -617,7 +630,7 @@ Trả về duy nhất đối tượng JSON chuẩn:
 `;
 
   const response = await generateContentWithRetryDirect(ai, {
-    model: 'gemini-3.6-flash',
+    model: 'gemini-2.5-flash',
     contents: prompt,
     config: {
       responseMimeType: 'application/json',
