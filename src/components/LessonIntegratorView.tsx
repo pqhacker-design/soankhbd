@@ -283,7 +283,22 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
       }
       toast.success('Đã tự động chèn nội dung Tích hợp vào Giáo án, giữ nguyên 100% mẫu gốc!');
     } else {
-      toast.error('Lỗi tích hợp giáo án: ' + (errorMessage || 'Vui lòng kiểm tra lại Gemini API Key hoặc thử lại!'));
+      let displayMsg = errorMessage || 'Vui lòng kiểm tra lại Gemini API Key hoặc thử lại!';
+      if (displayMsg.includes('503') || displayMsg.includes('UNAVAILABLE') || displayMsg.includes('high demand') || displayMsg.includes('Spikes in demand')) {
+        displayMsg = 'Hệ thống AI Gemini hiện đang quá tải tạm thời từ phía Google (Mã lỗi 503). Thầy/cô vui lòng nhấn lại nút "TỰ ĐỘNG TÍCH HỢP BẰNG AI GEMINI" sau vài giây.';
+      } else if (displayMsg.includes('429') || displayMsg.includes('RESOURCE_EXHAUSTED')) {
+        displayMsg = 'Mã Gemini API Key đã vượt quá hạn mức lưu lượng (Mã 429). Vui lòng đợi 1 phút hoặc kiểm tra lại API Key.';
+      } else if (displayMsg.startsWith('{') && displayMsg.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(displayMsg);
+          if (parsed.error?.message) {
+            displayMsg = parsed.error.message;
+          }
+        } catch {
+          // ignore
+        }
+      }
+      toast.error('Lỗi tích hợp giáo án: ' + displayMsg);
     }
 
     setIsProcessing(false);
