@@ -12,8 +12,10 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { ReferenceDocument } from '../types';
+import { useToast } from '../context/ToastContext';
 
 export const DocumentLibraryView: React.FC = () => {
+  const { toast } = useToast();
   const [documents, setDocuments] = useState<ReferenceDocument[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
@@ -51,7 +53,7 @@ export const DocumentLibraryView: React.FC = () => {
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !contentText) {
-      alert('Vui lòng nhập đầy đủ tiêu đề và nội dung văn bản');
+      toast.warning('Vui lòng nhập đầy đủ tiêu đề và nội dung văn bản');
       return;
     }
     try {
@@ -72,10 +74,11 @@ export const DocumentLibraryView: React.FC = () => {
         setShowUploadModal(false);
         setTitle('');
         setContentText('');
-        alert('Tải lên và lập chỉ mục văn bản mới thành công!');
+        toast.success('Tải lên và lập chỉ mục văn bản mới thành công!');
       }
     } catch (e) {
       console.error(e);
+      toast.error('Có lỗi xảy ra khi tải lên văn bản.');
     }
   };
 

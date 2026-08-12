@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { getApiKeyHeaders, getUserApiKey, setUserApiKey, clearUserApiKey } from '../utils/apiHelper';
 import { UserProfile } from '../types';
+import { useToast } from '../context/ToastContext';
 
 interface ApiKeyModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   onSaveSuccess,
   currentUser,
 }) => {
+  const { toast } = useToast();
   const [apiKeyInput, setApiKeyInput] = useState<string>('');
   const [showKey, setShowKey] = useState<boolean>(false);
   const [isTesting, setIsTesting] = useState<boolean>(false);
@@ -49,7 +51,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
       } else {
         setStatusMessage({
           type: 'info',
-          text: `Chưa có API Key. Vui lòng nhập Gemini API Key cá nhân của ${currentUser?.name || 'thầy/cô'} để sử dụng tính năng AI.`,
+          text: `Chưa cấu hình API Key. Vui lòng dán mã Gemini API Key của ${currentUser?.name || 'thầy/cô'} để bắt đầu sử dụng AI soạn bài.`,
         });
       }
     }
@@ -98,7 +100,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
           const data = await res.json();
           errorMessage = data.error || 'Mã API Key không hợp lệ.';
         } catch {
-          // Response is not JSON (e.g. 404 HTML on static Vercel host)
+          // Response is not JSON
         }
       }
     } catch (serverErr) {
@@ -124,14 +126,21 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
       setUserApiKey(cleanKey, currentUser?.id);
       setStatusMessage({
         type: 'success',
-        text: `Xác thực thành công! Gemini API Key cá nhân đã được lưu riêng cho tài khoản "${currentUser?.name || ''}".`,
+        text: `Xác thực thành công! Gemini API Key đã được lưu riêng cho tài khoản "${currentUser?.name || ''}".`,
       });
+      toast.success(`Xác thực & lưu Gemini API Key thành công cho ${currentUser?.name || 'tài khoản'}!`);
       if (onSaveSuccess) onSaveSuccess();
+
+      // Auto close modal when valid
+      setTimeout(() => {
+        onClose();
+      }, 700);
     } else {
       setStatusMessage({
         type: 'error',
         text: errorMessage || 'API Key không hợp lệ. Vui lòng kiểm tra lại mã đã dán.',
       });
+      toast.error('Kiểm tra API Key thất bại. Vui lòng kiểm tra lại mã khóa!');
     }
 
     setIsTesting(false);
@@ -144,7 +153,9 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
       type: 'info',
       text: `Đã xóa API Key thành công cho tài khoản ${currentUser?.name || ''}.`,
     });
+    toast.info('Đã xóa cấu hình API Key!');
   };
+
 
   const hasConfiguredKey = !!getUserApiKey(currentUser?.id);
 

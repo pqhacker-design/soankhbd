@@ -13,8 +13,10 @@ import {
 import { GeneratedMaterials } from '../types';
 import { getApiKeyHeaders } from '../utils/apiHelper';
 import { MathText } from './MathText';
+import { useToast } from '../context/ToastContext';
 
 export const MaterialsBankView: React.FC = () => {
+  const { toast } = useToast();
   const [subject, setSubject] = useState<string>('Ngữ văn');
   const [grade, setGrade] = useState<string>('Lớp 8');
   const [lessonTitle, setLessonTitle] = useState<string>('Hịch tướng sĩ - Tác giả Trần Quốc Tuấn');
@@ -60,9 +62,10 @@ export const MaterialsBankView: React.FC = () => {
     }
 
     if (generated) {
+      toast.success('Khởi tạo thành công Ngân hàng học liệu & Quiz!');
       setMaterials(generated);
     } else {
-      alert('Lỗi khởi tạo học liệu. Vui lòng kiểm tra lại Gemini API Key.');
+      toast.error('Lỗi khởi tạo học liệu. Vui lòng kiểm tra lại Gemini API Key.');
     }
     setIsGenerating(false);
   };

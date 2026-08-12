@@ -25,6 +25,7 @@ import {
   KeyRound,
 } from 'lucide-react';
 import { UserProfile, FullLessonPlan } from '../types';
+import { useToast } from '../context/ToastContext';
 
 interface AdminManagementViewProps {
   currentUser: UserProfile;
@@ -43,6 +44,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
   lessonPlans,
   onImportPlans,
 }) => {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Modal State for Add / Edit Teacher
@@ -62,7 +64,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
 
   const openAddModal = () => {
     if (!isAdmin) {
-      alert('Chỉ tài khoản Admin mới có quyền thêm người dùng mới!');
+      toast.error('Chỉ tài khoản Admin mới có quyền thêm người dùng mới!');
       return;
     }
     setEditingUser(null);
@@ -77,7 +79,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
 
   const openEditModal = (user: UserProfile) => {
     if (!isAdmin) {
-      alert('Chỉ tài khoản Admin mới có quyền chỉnh sửa thông tin người dùng!');
+      toast.error('Chỉ tài khoản Admin mới có quyền chỉnh sửa thông tin người dùng!');
       return;
     }
     setEditingUser(user);
@@ -93,7 +95,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
   const handleSaveUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAdmin) {
-      alert('Chỉ tài khoản Admin mới có quyền thêm hoặc chỉnh sửa người dùng!');
+      toast.error('Chỉ tài khoản Admin mới có quyền thêm hoặc chỉnh sửa người dùng!');
       return;
     }
 
@@ -101,7 +103,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
     const cleanPass = formPassword.trim();
 
     if (!formName.trim() || !cleanEmail || !cleanPass) {
-      alert('Vui lòng điền đầy đủ Họ tên, Email và Mật khẩu.');
+      toast.warning('Vui lòng điền đầy đủ Họ tên, Email và Mật khẩu.');
       return;
     }
 
@@ -111,7 +113,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
     );
 
     if (existingUser) {
-      alert(`Địa chỉ email "${formEmail.trim()}" đã được sử dụng bởi người dùng "${existingUser.name}". Mỗi tài khoản phải sử dụng một địa chỉ email duy nhất trên toàn hệ thống!`);
+      toast.error(`Địa chỉ email "${formEmail.trim()}" đã được sử dụng bởi người dùng "${existingUser.name}". Mỗi tài khoản phải sử dụng một địa chỉ email duy nhất trên toàn hệ thống!`);
       return;
     }
 
@@ -131,7 +133,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
           : u
       );
       onUpdateUsers(updatedList);
-      alert(`Đã cập nhật thông tin người dùng "${formName}" thành công!`);
+      toast.success(`Đã cập nhật thông tin người dùng "${formName}" thành công!`);
     } else {
       // Add new teacher
       const newUser: UserProfile = {
@@ -144,7 +146,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
         avatarUrl: formAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
       };
       onUpdateUsers([...users, newUser]);
-      alert(`Đã thêm thành công tài khoản "${formName}" (${cleanEmail})!`);
+      toast.success(`Đã thêm thành công tài khoản "${formName}" (${cleanEmail})!`);
     }
 
     setSearchQuery('');
@@ -153,11 +155,11 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
 
   const handleDeleteUser = (user: UserProfile) => {
     if (!isAdmin) {
-      alert('Chỉ tài khoản Admin mới có quyền xóa người dùng!');
+      toast.error('Chỉ tài khoản Admin mới có quyền xóa người dùng!');
       return;
     }
     if (user.id === currentUser.id) {
-      alert('Bạn không thể xóa tài khoản Quản trị viên đang đăng nhập!');
+      toast.warning('Bạn không thể xóa tài khoản Quản trị viên đang đăng nhập!');
       return;
     }
     setUserToDelete(user);
@@ -166,6 +168,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
   const executeDeleteUser = () => {
     if (!userToDelete) return;
     onUpdateUsers(users.filter((u) => u.id !== userToDelete.id));
+    toast.info(`Đã xóa tài khoản "${userToDelete.name}"`);
     setUserToDelete(null);
   };
 
@@ -177,6 +180,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+    toast.success('Đã tải xuống file sao lưu hệ thống!');
   };
 
   const handleRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -188,10 +192,10 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
         const imported = JSON.parse(event.target?.result as string);
         if (Array.isArray(imported)) {
           onImportPlans(imported);
-          alert(`Đã khôi phục dữ liệu hệ thống thành công (${imported.length} bài dạy)!`);
+          toast.success(`Đã khôi phục dữ liệu hệ thống thành công (${imported.length} bài dạy)!`);
         }
       } catch (err) {
-        alert('Lỗi khôi phục dữ liệu.');
+        toast.error('Lỗi khôi phục dữ liệu.');
       }
     };
     reader.readAsText(file);
@@ -336,7 +340,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
                           <button
                             onClick={() => {
                               onSwitchUser(u);
-                              alert(`Đã chuyển đổi sang tài khoản: "${u.name}" (${u.email})!`);
+                              toast.info(`Đã chuyển đổi sang tài khoản: "${u.name}" (${u.email})!`);
                             }}
                             title="Chuyển đăng nhập sang giáo viên này"
                             className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 dark:text-blue-300 transition-colors"

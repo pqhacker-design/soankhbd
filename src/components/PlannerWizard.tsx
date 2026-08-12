@@ -49,14 +49,17 @@ import {
   INTEGRATED_TOPICS_DETAILED,
   SAMPLE_PLAN_EDIT_MODES,
 } from '../data/presets';
-import { getApiKeyHeaders } from '../utils/apiHelper';
+import { getApiKeyHeaders, getUserApiKey } from '../utils/apiHelper';
+import { useToast } from '../context/ToastContext';
 
 interface PlannerWizardProps {
   currentUser?: UserProfile;
   onPlanGenerated: (plan: FullLessonPlan) => void;
+  onOpenApiKeyModal?: () => void;
 }
 
-export const PlannerWizard: React.FC<PlannerWizardProps> = ({ currentUser, onPlanGenerated }) => {
+export const PlannerWizard: React.FC<PlannerWizardProps> = ({ currentUser, onPlanGenerated, onOpenApiKeyModal }) => {
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generationProgress, setGenerationProgress] = useState<string>('');
@@ -101,6 +104,13 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ currentUser, onPla
   const handleObjectiveFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const userApiKey = getUserApiKey(currentUser?.id);
+    if (!userApiKey) {
+      toast.warning('Vui lòng cấu hình Gemini API Key trước khi trích xuất tài liệu bằng AI.');
+      if (onOpenApiKeyModal) onOpenApiKeyModal();
+      return;
+    }
 
     setIsAnalyzingDoc(true);
     setUploadedDocName(file.name);
@@ -166,16 +176,16 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ currentUser, onPla
           if (Array.isArray(ext.suggestedSpecificCompetencies) && ext.suggestedSpecificCompetencies.length > 0) {
             setSelectedSpecificCompetencies((prev) => Array.from(new Set([...prev, ...ext.suggestedSpecificCompetencies])));
           }
-          alert(`Đã tự động trích xuất Yêu cầu cần đạt & mục tiêu từ tài liệu "${file.name}" thành công!`);
+          toast.success(`Đã tự động trích xuất Yêu cầu cần đạt & mục tiêu từ tài liệu "${file.name}" thành công!`);
         } else {
-          alert('Không thể trích xuất thông tin từ tài liệu. Vui lòng kiểm tra lại API Key hoặc file đính kèm.');
+          toast.error('Không thể trích xuất thông tin từ tài liệu. Vui lòng kiểm tra lại API Key hoặc file đính kèm.');
         }
         setIsAnalyzingDoc(false);
       };
       reader.readAsDataURL(file);
     } catch (err) {
       console.error(err);
-      alert('Có lỗi xảy ra khi đọc file.');
+      toast.error('Có lỗi xảy ra khi đọc file.');
       setIsAnalyzingDoc(false);
     }
   };
@@ -277,6 +287,13 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ currentUser, onPla
 
   // Submit & Call Express Server API
   const handleGenerate = async () => {
+    const userApiKey = getUserApiKey(currentUser?.id);
+    if (!userApiKey) {
+      toast.warning('Vui lòng cấu hình Gemini API Key cá nhân để bắt đầu AI Soạn Bài.');
+      if (onOpenApiKeyModal) onOpenApiKeyModal();
+      return;
+    }
+
     setIsGenerating(true);
     setGenerationProgress('Đang kết nối AI Gemini 3.6 & Phân tích chuẩn GDPT 2018...');
 
@@ -360,12 +377,13 @@ export const PlannerWizard: React.FC<PlannerWizardProps> = ({ currentUser, onPla
     }
 
     if (generatedPlan) {
+      toast.success('Đã khởi tạo thành công Kế hoạch bài dạy bằng AI Gemini!');
       onPlanGenerated({
         ...generatedPlan,
         layoutFormat: layoutFormat,
       });
     } else {
-      alert('Lỗi tạo bài dạy: ' + (errorMessage || 'Vui lòng kiểm tra lại Gemini API Key hoặc thử lại!'));
+      toast.error('Lỗi tạo bài dạy: ' + (errorMessage || 'Vui lòng kiểm tra lại Gemini API Key hoặc thử lại!'));
     }
 
     setIsGenerating(false);

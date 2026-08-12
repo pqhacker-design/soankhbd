@@ -32,6 +32,7 @@ import { exportLessonPlanToDocx } from '../utils/docxExporter';
 import { buildNotebookLMPrompt } from '../utils/notebooklmPromptBuilder';
 import { getApiKeyHeaders } from '../utils/apiHelper';
 import { MathText } from './MathText';
+import { useToast } from '../context/ToastContext';
 
 interface LessonPlanEditorViewProps {
   plan: FullLessonPlan;
@@ -44,6 +45,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({
   onSavePlan,
   currentUser,
 }) => {
+  const { toast } = useToast();
   const [currentPlan, setCurrentPlan] = useState<FullLessonPlan>(plan);
   const [layoutFormat, setLayoutFormat] = useState<'standard' | 'two_column' | 'three_column'>(
     plan.layoutFormat || 'standard'
@@ -90,7 +92,7 @@ export const LessonPlanEditorView: React.FC<LessonPlanEditorViewProps> = ({
     };
     setCurrentPlan(updatedPlan);
     onSavePlan(updatedPlan);
-    alert(`Đã cập nhật Tên Trường ("${currentUser.school}") và Họ Tên Giáo Viên ("${currentUser.name}") vào Kế hoạch bài dạy thành công!`);
+    toast.success(`Đã cập nhật Tên Trường ("${currentUser.school}") và Họ Tên Giáo Viên ("${currentUser.name}") vào Kế hoạch bài dạy thành công!`);
   };
 
   // Copy full lesson text to clipboard
@@ -165,12 +167,13 @@ HOẠT ĐỘNG ${i + 1}: ${act.name.toUpperCase()} (${act.duration})
         onSavePlan(updated);
         setRefiningActivityId(null);
         setRefineInstruction('');
+        toast.success('Đã tinh chỉnh hoạt động bài dạy thành công!');
       } else {
-        alert('Không thể tinh chỉnh hoạt động: ' + (data.error || 'Lỗi kết nối'));
+        toast.error('Không thể tinh chỉnh hoạt động: ' + (data.error || 'Lỗi kết nối'));
       }
     } catch (e) {
       console.error(e);
-      alert('Lỗi kết nối đến máy chủ AI');
+      toast.error('Lỗi kết nối đến máy chủ AI');
     } finally {
       setIsRefining(false);
     }
@@ -221,9 +224,9 @@ HOẠT ĐỘNG ${i + 1}: ${act.name.toUpperCase()} (${act.duration})
       };
       setCurrentPlan(updated);
       onSavePlan(updated);
-      alert('Đã tạo thành công Bộ Quiz trắc nghiệm 4 mức độ & Học liệu bổ trợ!');
+      toast.success('Đã tạo thành công Bộ Quiz trắc nghiệm 4 mức độ & Học liệu bổ trợ!');
     } else {
-      alert('Không thể sinh học liệu. Vui lòng kiểm tra lại API Key!');
+      toast.error('Không thể sinh học liệu. Vui lòng kiểm tra lại API Key!');
     }
     setIsGeneratingMaterials(false);
   };

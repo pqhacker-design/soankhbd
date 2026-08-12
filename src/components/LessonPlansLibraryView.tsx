@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { FullLessonPlan } from '../types';
 import { exportLessonPlanToDocx } from '../utils/docxExporter';
+import { useToast } from '../context/ToastContext';
 
 interface LessonPlansLibraryViewProps {
   lessonPlans: FullLessonPlan[];
@@ -32,6 +33,7 @@ export const LessonPlansLibraryView: React.FC<LessonPlansLibraryViewProps> = ({
   onDeletePlan,
   onImportPlans,
 }) => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedLevelFilter, setSelectedLevelFilter] = useState<string>('Tất cả');
 
@@ -69,12 +71,12 @@ export const LessonPlansLibraryView: React.FC<LessonPlansLibraryViewProps> = ({
         const imported = JSON.parse(event.target?.result as string);
         if (Array.isArray(imported)) {
           onImportPlans(imported);
-          alert(`Đã nhập thành công ${imported.length} Kế hoạch bài dạy!`);
+          toast.success(`Đã nhập thành công ${imported.length} Kế hoạch bài dạy!`);
         } else {
-          alert('File JSON không hợp lệ.');
+          toast.error('File JSON không hợp lệ.');
         }
       } catch (err) {
-        alert('Lỗi đọc file JSON.');
+        toast.error('Lỗi đọc file JSON.');
       }
     };
     reader.readAsText(file);
