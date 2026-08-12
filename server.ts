@@ -77,12 +77,14 @@ async function generateContentWithRetry(
     contents: any;
     config?: any;
   },
-  maxRetries = 2
+  maxRetries = 1
 ): Promise<any> {
+  const requestedModel = (params.model && params.model !== 'gemini-3.6-flash') ? params.model : 'gemini-2.5-flash';
   const modelsToTry = [
-    params.model || 'gemini-3.6-flash',
+    requestedModel,
     'gemini-2.5-flash',
     'gemini-2.0-flash',
+    'gemini-1.5-flash',
   ];
   const uniqueModels = Array.from(new Set(modelsToTry));
 
@@ -92,7 +94,7 @@ async function generateContentWithRetry(
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         if (attempt > 0) {
-          await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
+          await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
         }
 
         const response = await ai.models.generateContent({
@@ -108,6 +110,12 @@ async function generateContentWithRetry(
 
         if (errMsg.includes('MISSING_API_KEY') || errMsg.includes('API key not valid') || errMsg.includes('API_KEY_INVALID')) {
           throw new Error(formatGeminiError(err));
+        }
+
+        // If model doesn't exist or not supported, do not retry same model name
+        if (errMsg.includes('not found') || errMsg.includes('404') || errMsg.includes('INVALID_ARGUMENT') || errMsg.includes('is not supported')) {
+          console.warn(`[Gemini Retry] Model ${modelName} not supported/not found, trying next model...`);
+          break;
         }
 
         console.warn(`[Gemini Retry] Model ${modelName} attempt ${attempt + 1} error: ${errMsg.slice(0, 150)}`);
@@ -126,7 +134,7 @@ app.post('/api/validate-api-key', async (req, res) => {
   try {
     const ai = getGeminiClient(req);
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: 'Respond with "OK" if this key is active.',
     });
     res.json({ success: true, message: 'Gemini API Key kết nối thành công!' });
@@ -214,7 +222,7 @@ HÃY TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON VỚI CẤU TRÚC SAU:
     }
 
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: contents,
       config: {
         responseMimeType: 'application/json',
@@ -495,7 +503,7 @@ HÃY TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON ĐÚNG ĐỊNH DẠNG SAU:
     geminiContents.push({ text: prompt });
 
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: geminiContents.length === 1 ? prompt : geminiContents,
       config: {
         responseMimeType: 'application/json',
@@ -599,7 +607,7 @@ Trả về định dạng JSON duy nhất:
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -681,13 +689,12 @@ Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc:
     "CHECK 2: Đã đánh dấu nhãn [TÍCH HỢP ...] rõ ràng cho từng nội dung bổ sung",
     "CHECK 3: Vị trí chèn tự nhiên, phù hợp với tiến trình bài dạy"
   ],
-  "integratedHtml": "Toàn bộ HTML giáo án gốc giữ nguyên 100% và được chèn thêm các thẻ <p> [TÍCH HỢP ...] </p> ở vị trí phù hợp.",
-  "integratedFullText": "Văn bản thuần của giáo án đã tích hợp."
+  "integratedHtml": "Toàn bộ HTML giáo án gốc giữ nguyên 100% và được chèn thêm các thẻ <p> [TÍCH HỢP ...] </p> ở vị trí phù hợp."
 }
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -696,6 +703,12 @@ Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc:
 
     const jsonText = response.text || '{}';
     const result = cleanAndParseJson(jsonText);
+    
+    // Automatically derive integratedFullText from integratedHtml to avoid massive duplicate LLM generation
+    if (result.integratedHtml && !result.integratedFullText) {
+      result.integratedFullText = result.integratedHtml.replace(/<[^>]+>/g, '\n').replace(/\n+/g, '\n').trim();
+    }
+
     res.json({ success: true, ...result });
   } catch (error: any) {
     console.error('Error integrating lesson plan:', error);
@@ -772,7 +785,7 @@ Trả về duy nhất đối tượng JSON chuẩn:
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -831,7 +844,7 @@ Hãy trả về duy nhất đối tượng JSON Hoạt động dạy học mới
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: { responseMimeType: 'application/json' },
     });
@@ -874,7 +887,7 @@ Hãy trả lời bằng tiếng Việt văn minh, mạch lạc, dễ hiểu, d�
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
     });
 
