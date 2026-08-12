@@ -187,6 +187,17 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
     setIsProcessing(true);
     setProgressStatus('Đang đọc cấu trúc giáo án & kết nối Gemini 3.6 AI...');
 
+    const payload = {
+      uploadedText: uploadedText,
+      selectedTopics: selectedTopics,
+      customInstructions: customInstructions,
+      schoolName: currentUser?.school || '',
+      teacherName: currentUser?.name || '',
+    };
+
+    let resultData: any = null;
+    let errorMessage = '';
+
     try {
       setTimeout(() => {
         setProgressStatus('Đang phân tích vị trí cần chèn Năng lực số, Môi trường, Hướng nghiệp, ATGT...');
@@ -195,30 +206,65 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
       const res = await fetch('/api/integrate-lesson-plan', {
         method: 'POST',
         headers: getApiKeyHeaders(currentUser?.id),
-        body: JSON.stringify({
-          uploadedText: uploadedText,
-          selectedTopics: selectedTopics,
-          customInstructions: customInstructions,
-          schoolName: currentUser.school,
-          teacherName: currentUser.name,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-
-      if (data.success && data.lessonPlan) {
-        setResultPlan(data.lessonPlan);
-        setIntegrationSummary(data.integrationSummary || []);
-        toast.success('Đã tự động bổ sung thành công các nội dung Tích hợp vào Giáo án!');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.lessonPlan) {
+          resultData = data;
+        } else {
+          errorMessage = data.error || '';
+          if (data.apiKeyRequired && onOpenApiKeyModal) {
+            onOpenApiKeyModal();
+          }
+        }
       } else {
-        toast.error('Lỗi tích hợp giáo án: ' + (data.error || 'Vui lòng kiểm tra lại API Key hoặc thử lại!'));
+        try {
+          const data = await res.json();
+          errorMessage = data.error || '';
+          if (data.apiKeyRequired && onOpenApiKeyModal) {
+            onOpenApiKeyModal();
+          }
+        } catch {
+          // Non-json response
+        }
       }
-    } catch (err: any) {
-      console.error(err);
-      toast.error('Lỗi kết nối máy chủ AI. Vui lòng kiểm tra lại đường truyền mạng.');
-    } finally {
-      setIsProcessing(false);
+    } catch (serverErr) {
+      console.warn('Server integrate-lesson-plan failed, attempting client fallback:', serverErr);
     }
+
+    // Direct Client-Side Fallback using @google/genai SDK
+    if (!resultData || !resultData.lessonPlan) {
+      try {
+        setProgressStatus('Đang xử lý trực tiếp qua Gemini Client AI SDK...');
+        const { integrateLessonPlanDirect } = await import('../utils/clientGeminiService');
+        const directResult = await integrateLessonPlanDirect(payload);
+        if (directResult && directResult.lessonPlan) {
+          resultData = directResult;
+        } else if (directResult && directResult.info) {
+          resultData = { lessonPlan: directResult, integrationSummary: [] };
+        }
+      } catch (clientErr: any) {
+        console.error('Client Gemini integration error:', clientErr);
+        if (!errorMessage) {
+          errorMessage = clientErr.message || 'Lỗi khi tích hợp giáo án bằng AI.';
+        }
+        if (clientErr.message?.includes('MISSING_API_KEY') && onOpenApiKeyModal) {
+          onOpenApiKeyModal();
+        }
+      }
+    }
+
+    if (resultData && resultData.lessonPlan) {
+      setResultPlan(resultData.lessonPlan);
+      setIntegrationSummary(resultData.integrationSummary || []);
+      toast.success('Đã tự động bổ sung thành công các nội dung Tích hợp vào Giáo án!');
+    } else {
+      toast.error('Lỗi tích hợp giáo án: ' + (errorMessage || 'Vui lòng kiểm tra lại Gemini API Key hoặc thử lại!'));
+    }
+
+    setIsProcessing(false);
   };
 
   // Export to DOCX
