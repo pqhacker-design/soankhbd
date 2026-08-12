@@ -16,11 +16,242 @@ import { saveAs } from 'file-saver';
 import { FullLessonPlan } from '../types';
 import { convertTextWithMathToDocxRuns, DocxTextRunOptions } from './latexToDocxMath';
 
+function parseColorToHex(colorStr: string): string | undefined {
+  if (!colorStr) return undefined;
+  if (colorStr.startsWith('#')) {
+    return colorStr.slice(1).toUpperCase();
+  }
+  if (colorStr.startsWith('rgb')) {
+    const matches = colorStr.match(/\d+/g);
+    if (matches && matches.length >= 3) {
+      const r = parseInt(matches[0], 10).toString(16).padStart(2, '0');
+      const g = parseInt(matches[1], 10).toString(16).padStart(2, '0');
+      const b = parseInt(matches[2], 10).toString(16).padStart(2, '0');
+      return `${r}${g}${b}`.toUpperCase();
+    }
+  }
+  return undefined;
+}
+
+function parseParagraphElementToDocx(el: HTMLElement, isListItem: boolean = false): Paragraph {
+  const runs: TextRun[] = [];
+  const styleAttr = el.getAttribute('style') || '';
+  const isIntegratedBlock =
+    styleAttr.includes('border-left') ||
+    styleAttr.includes('background-color') ||
+    (el.textContent && el.textContent.includes('[TÍCH HỢP'));
+
+  function traverseInline(node: Node, currentStyles: { bold?: boolean; italic?: boolean; color?: string }) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent || '';
+      if (text) {
+        runs.push(
+          new TextRun({
+            text,
+            font: 'Times New Roman',
+            size: 26, // 13pt
+            bold: currentStyles.bold,
+            italic: currentStyles.italic,
+            color: currentStyles.color || (isIntegratedBlock ? '0F766E' : '000000'),
+          })
+        );
+      }
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const childEl = node as HTMLElement;
+      const tag = childEl.tagName.toUpperCase();
+      const style = childEl.getAttribute('style') || '';
+
+      const newStyles = { ...currentStyles };
+      if (
+        tag === 'STRONG' ||
+        tag === 'B' ||
+        style.includes('font-weight: bold') ||
+        style.includes('font-weight: 600') ||
+        style.includes('font-weight:700')
+      ) {
+        newStyles.bold = true;
+      }
+      if (tag === 'EM' || tag === 'I' || style.includes('font-style: italic')) {
+        newStyles.italic = true;
+      }
+
+      const colorMatch = style.match(/color:\s*([^;]+)/i);
+      if (colorMatch) {
+        const hex = parseColorToHex(colorMatch[1].trim());
+        if (hex) newStyles.color = hex;
+      }
+
+      for (const childNode of Array.from(childEl.childNodes)) {
+        traverseInline(childNode, newStyles);
+      }
+    }
+  }
+
+  for (const childNode of Array.from(el.childNodes)) {
+    traverseInline(childNode, {});
+  }
+
+  if (runs.length === 0) {
+    runs.push(new TextRun({ text: el.textContent || '', font: 'Times New Roman', size: 26 }));
+  }
+
+  return new Paragraph({
+    children: runs,
+    bullet: isListItem ? { level: 0 } : undefined,
+    spacing: { before: 60, after: 60, line: 300 },
+  });
+}
+
+function parseTableElementToDocx(tableEl: HTMLElement): Table {
+  const rows: TableRow[] = [];
+  const trElements = Array.from(tableEl.querySelectorAll('tr'));
+
+  for (const trEl of trElements) {
+    const cells: TableCell[] = [];
+    const cellEls = Array.from(trEl.querySelectorAll('th, td'));
+
+    for (const cellEl of cellEls) {
+      const cellParagraphs: Paragraph[] = [];
+      const children = Array.from(cellEl.childNodes);
+
+      for (const child of children) {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          const childEl = child as HTMLElement;
+          const tag = childEl.tagName.toUpperCase();
+          if (['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(tag)) {
+            cellParagraphs.push(parseParagraphElementToDocx(childEl));
+          } else if (tag === 'UL' || tag === 'OL') {
+            const lis = Array.from(childEl.querySelectorAll('li'));
+            for (const li of lis) {
+              cellParagraphs.push(parseParagraphElementToDocx(li, true));
+            }
+          } else {
+            cellParagraphs.push(parseParagraphElementToDocx(childEl));
+          }
+        } else if (child.nodeType === Node.TEXT_NODE) {
+          const txt = child.textContent?.trim();
+          if (txt) {
+            cellParagraphs.push(
+              new Paragraph({
+                children: [new TextRun({ text: txt, font: 'Times New Roman', size: 26 })],
+                spacing: { before: 40, after: 40, line: 300 },
+              })
+            );
+          }
+        }
+      }
+
+      if (cellParagraphs.length === 0) {
+        cellParagraphs.push(new Paragraph({ children: [new TextRun({ text: '', font: 'Times New Roman', size: 26 })] }));
+      }
+
+      cells.push(
+        new TableCell({
+          children: cellParagraphs,
+          borders: {
+            top: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+            bottom: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+            left: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+            right: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+          },
+          padding: { top: 100, bottom: 100, left: 150, right: 150 },
+        })
+      );
+    }
+
+    if (cells.length > 0) {
+      rows.push(new TableRow({ children: cells }));
+    }
+  }
+
+  return new Table({
+    rows: rows.length > 0 ? rows : [
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [new Paragraph({ children: [new TextRun({ text: tableEl.textContent || '', font: 'Times New Roman', size: 26 })] })],
+          }),
+        ],
+      }),
+    ],
+    width: { size: 100, type: WidthType.PERCENTAGE },
+  });
+}
+
+function parseElementToDocxChildren(container: Element): (Paragraph | Table)[] {
+  const children: (Paragraph | Table)[] = [];
+
+  for (const child of Array.from(container.childNodes)) {
+    if (child.nodeType === Node.TEXT_NODE) {
+      const text = child.textContent?.trim();
+      if (text) {
+        children.push(
+          new Paragraph({
+            children: [new TextRun({ text, font: 'Times New Roman', size: 26 })],
+            spacing: { before: 60, after: 60, line: 300 },
+          })
+        );
+      }
+    } else if (child.nodeType === Node.ELEMENT_NODE) {
+      const el = child as HTMLElement;
+      const tagName = el.tagName.toUpperCase();
+
+      if (tagName === 'TABLE') {
+        children.push(parseTableElementToDocx(el));
+      } else if (tagName === 'P' || tagName.startsWith('H') || tagName === 'DIV') {
+        children.push(parseParagraphElementToDocx(el));
+      } else if (tagName === 'UL' || tagName === 'OL') {
+        const lis = Array.from(el.querySelectorAll('li'));
+        for (const li of lis) {
+          children.push(parseParagraphElementToDocx(li, true));
+        }
+      } else {
+        children.push(parseParagraphElementToDocx(el));
+      }
+    }
+  }
+
+  return children;
+}
+
 export async function exportHtmlToDocx(
   htmlContent: string,
   fileName: string = 'Giao_An_Tich_Hop'
 ) {
   const cleanTitle = fileName.replace(/\.[^/.]+$/, '');
+  const cleanFileName = fileName.endsWith('.docx') ? fileName : `${cleanTitle}_TichHop.docx`;
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    const docxChildren = parseElementToDocxChildren(doc.body);
+
+    const docxDocument = new Document({
+      sections: [
+        {
+          properties: {
+            page: {
+              margin: {
+                top: 1134, // 2cm
+                bottom: 1134, // 2cm
+                left: 1417, // 2.5cm
+                right: 1134, // 2cm
+              },
+            },
+          },
+          children: docxChildren,
+        },
+      ],
+    });
+
+    const blob = await Packer.toBlob(docxDocument);
+    saveAs(blob, cleanFileName);
+    return;
+  } catch (docxErr) {
+    console.warn('Native docx generation failed, falling back to Word HTML (.doc):', docxErr);
+  }
+
+  // Fallback: Microsoft Word HTML document format (.doc)
   const fullHtml = `
     <html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' 
           xmlns:w='urn:schemas-microsoft-microsoft-com:office:word' 
@@ -86,10 +317,7 @@ export async function exportHtmlToDocx(
     const blob = new Blob(['\ufeff' + fullHtml], {
       type: 'application/msword;charset=utf-8',
     });
-    const cleanFileName = fileName.endsWith('.doc') || fileName.endsWith('.docx')
-      ? fileName
-      : `${fileName}.doc`;
-    saveAs(blob, cleanFileName);
+    saveAs(blob, `${cleanTitle}_TichHop.doc`);
   } catch (err) {
     console.error('Error exporting HTML to DOC:', err);
   }
