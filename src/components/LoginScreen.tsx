@@ -84,9 +84,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ usersList, onLoginSucc
               <h2 className="text-2xl font-bold leading-tight">
                 Soạn Bài Dạy Nhanh Chuẩn CV 5512 &amp; 3535
               </h2>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Đồng bộ giáo án, đề kiểm tra, phiếu học tập và học liệu cá nhân hóa đám mây theo từng tài khoản giáo viên.
-              </p>
             </div>
 
             <div className="space-y-2 pt-2">
@@ -106,7 +103,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ usersList, onLoginSucc
           </div>
 
           <div className="relative z-10 pt-8 border-t border-white/10 text-[11px] text-slate-400">
-            © 2026 AI Lesson Planner PRO • Phiên bản đồng bộ đám mây
+            © 2026 AI Lesson Planner PRO • 0913117321
           </div>
         </div>
 
@@ -191,7 +188,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ usersList, onLoginSucc
           </div>
 
           <div className="text-center pt-2 text-slate-400 text-[11px]">
-            Hệ thống hỗ trợ đồng bộ tự động dữ liệu giáo án giữa các máy tính &amp; trình duyệt qua Firestore.
+            Hệ thống hỗ trợ đồng bộ tự động dữ liệu qua Firestore.
           </div>
         </div>
       </div>
