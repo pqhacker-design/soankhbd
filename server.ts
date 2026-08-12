@@ -549,47 +549,53 @@ app.post('/api/integrate-lesson-plan', async (req, res) => {
 
     const prompt = `
 Bạn là Chuyên gia Cao cấp về Chuẩn hóa và Tích hợp Giáo dục Phổ thông GDPT 2018 Việt Nam (Công văn 5512/BGDĐT đối với THCS/THPT, Công văn 3535 đối với Tiểu học).
+
 Dưới đây là NỘI DUNG GIÁO ÁN SẴN CÓ do giáo viên tải lên:
 ================================================================================
 ${uploadedText}
 ================================================================================
 
-NHIỆM VỤ CỦA BẠN:
-1. Đọc và giữ nguyên 100% kiến thức chuyên môn, cấu trúc bài dạy và khung bài dạy gốc của giáo án tải lên.
-2. Tự động Phân tích và BỔ SUNG CÁC ĐIỂM TÍCH HỢP CHUYÊN SÂU theo đúng danh sách các chủ đề được chọn: [${topicList}].
-   - **Tích hợp Năng lực số**: Ghép nối việc sử dụng phần mềm, khai thác học liệu số, ứng dụng CNTT, an toàn không gian mạng.
-   - **Tích hợp Môi trường & Biến đổi khí hậu**: Liên hệ tiết kiệm năng lượng, bảo vệ cảnh quan, phân loại rác, tác động môi trường.
-   - **Tích hợp Hướng nghiệp**: Liên hệ định hướng ứng dụng nghề nghiệp tương lai, vị trí công việc thực tế trong xã hội.
-   - **Tích hợp An toàn giao thông**: Tình huống chấp hành luật giao thông, văn hóa giao thông an toàn liên hệ từ kiến thức bài học.
-   - **Tích hợp Giáo dục địa phương**: Liên hệ thực tiễn lịch sử, danh lam thắng cảnh, văn hóa di sản, sản vật, kinh tế xã hội địa phương.
-3. Chèn rõ ràng các điểm tích hợp mới vào:
-   - Phần Mục tiêu (I. Objectives) -> Yêu cầu cần đạt, Năng lực chung, Năng lực đặc thù.
-   - Phần Thiết bị & Học liệu (II. Equipment & Materials).
-   - Tiến trình Dạy học (III. Activities - 4 bước) -> Đánh dấu bằng các nhãn nổi bật như: [TÍCH HỢP NĂNG LỰC SỐ], [TÍCH HỢP MÔI TRƯỜNG], [TÍCH HỢP HƯỚNG NGHIỆP], [TÍCH HỢP AN TOÀN GIAO THÔNG], [TÍCH HỢP GIÁO DỤC ĐỊA PHƯƠNG].
-   - Phần Đánh giá & Phân hóa (IV. Assessment & Differentiation).
+QUY TẮC BẢO TOÀN NGUYÊN VĂN BẮT BUỘC (STRICT VERBATIM RULE):
+1. **GIỮ NGUYÊN 100% VĂN BẢN GỐC**: Tất cả các đoạn văn, câu hỏi, kiến thức, lời dặn, các bước tổ chức thực hiện, chuyển giao nhiệm vụ, sản phẩm học sinh, kết luận... trong giáo án gốc do giáo viên tải lên PHẢI ĐƯỢC GIỮ NGUYÊN VĂN TỪNG CÂU TỪNG TỪ.
+2. **TUYỆT ĐỐI KHÔNG TÓM TẮT, KHÔNG RÚT GỌN, KHÔNG DIỄN ĐẠT LẠI, KHÔNG SỬA ĐỔI** bất kỳ nội dung nào có sẵn trong giáo án gốc.
+3. **NHIỆM VỤ DUY NHẤT DÀNH CHO BẠN**: Chỉ TỰ ĐỘNG CHÈN BỔ SUNG THÊM các điểm tích hợp chuyên sâu theo danh sách chủ đề được chọn: [${topicList}].
+   - **Tích hợp Năng lực số**: Chèn nội dung sử dụng thiết bị số, ứng dụng CNTT, phần mềm học tập, tra cứu, an toàn mạng.
+   - **Tích hợp Môi trường & Biến đổi khí hậu**: Chèn nội dung tiết kiệm tài nguyên, phân loại rác, bảo vệ cảnh quan.
+   - **Tích hợp Hướng nghiệp**: Chèn nội dung liên hệ ứng dụng ngành nghề thực tế, kỹ năng công việc tương lai.
+   - **Tích hợp An toàn giao thông**: Chèn nội dung chấp hành luật giao thông, văn hóa đi lại an toàn.
+   - **Tích hợp Giáo dục địa phương**: Chèn nội dung liên hệ di sản, lịch sử, văn hóa, sản vật, kinh tế địa phương.
+
+4. **CÁCH CHÈN VÀO GIÁO ÁN**:
+   - Chèn nhãn nổi bật dưới dạng:
+     • [TÍCH HỢP NĂNG LỰC SỐ: ...]
+     • [TÍCH HỢP MÔI TRƯỜNG: ...]
+     • [TÍCH HỢP HƯỚNG NGHIỆP: ...]
+     • [TÍCH HỢP AN TOÀN GIAO THÔNG: ...]
+     • [TÍCH HỢP GIÁO DỤC ĐỊA PHƯƠNG: ...]
+   - Chèn vào đúng vị trí thích hợp trong Mục tiêu, Thiết bị dạy học, các Hoạt động 1, 2, 3, 4 (Bước 1: Chuyển giao nhiệm vụ, Bước 2: Thực hiện nhiệm vụ, Bước 3: Báo cáo thảo luận, Bước 4: Kết luận nhận định) và Đánh giá.
 
 Yêu cầu bổ sung từ giáo viên: ${customInstructions || 'Không có.'}
 
 Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc sau:
 {
   "integrationSummary": [
-    "Tóm tắt điểm tích hợp Năng lực số đã thêm...",
-    "Tóm tắt điểm tích hợp Môi trường đã thêm...",
-    "Tóm tắt điểm tích hợp Hướng nghiệp đã thêm...",
-    "Tóm tắt điểm tích hợp An toàn giao thông đã thêm...",
-    "Tóm tắt điểm tích hợp Giáo dục địa phương đã thêm..."
+    "Tóm tắt điểm tích hợp Năng lực số đã bổ sung...",
+    "Tóm tắt điểm tích hợp Môi trường đã bổ sung...",
+    "Tóm tắt điểm tích hợp Hướng nghiệp đã bổ sung...",
+    "Tóm tắt điểm tích hợp An toàn giao thông đã bổ sung...",
+    "Tóm tắt điểm tích hợp Giáo dục địa phương đã bổ sung..."
   ],
   "lessonPlan": {
     "id": "lp-integrated-${Date.now()}",
     "createdAt": "${new Date().toISOString()}",
     "updatedAt": "${new Date().toISOString()}",
     "level": "THCS",
-    "subject": "Tên môn học từ giáo án",
-    "grade": "Lớp học từ giáo án",
-    "textbook": "Bộ sách từ giáo án",
+    "subject": "Tên môn học trích xuất từ giáo án gốc",
+    "grade": "Lớp học trích xuất từ giáo án gốc",
+    "textbook": "Bộ sách trích xuất từ giáo án gốc",
     "info": {
-      "lessonTitle": "Tên bài dạy từ giáo án gốc",
-      "topic": "Chủ đề / Chương",
+      "lessonTitle": "Tên bài dạy trích xuất từ giáo án gốc",
+      "topic": "Chủ đề / Chương từ giáo án gốc",
       "periodNumber": "Tiết 1",
       "duration": "45 phút",
       "date": "${new Date().toISOString().split('T')[0]}",
@@ -599,19 +605,19 @@ Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc s
       "departmentName": "Tổ chuyên môn"
     },
     "objectives": {
-      "qualities": ["Phẩm chất..."],
-      "generalCompetencies": ["Năng lực chung..."],
-      "specificCompetencies": ["Năng lực đặc thù..."],
-      "requirementsToAchieve": ["Yêu cầu cần đạt đã bổ sung điểm tích hợp..."]
+      "qualities": ["Giữ nguyên phẩm chất từ giáo án gốc, chèn thêm phẩm chất tích hợp nếu có..."],
+      "generalCompetencies": ["Giữ nguyên năng lực chung từ giáo án gốc..."],
+      "specificCompetencies": ["Giữ nguyên năng lực đặc thù từ giáo án gốc..."],
+      "requirementsToAchieve": ["Giữ nguyên 100% Yêu cầu cần đạt gốc + bổ sung câu tích hợp mới..."]
     },
     "methodologies": {
-      "methods": ["Phương pháp dạy học..."],
-      "techniques": ["Kỹ thuật dạy học..."],
-      "organizationForms": ["Hình thức tổ chức..."]
+      "methods": ["Phương pháp dạy học gốc..."],
+      "techniques": ["Kỹ thuật dạy học gốc..."],
+      "organizationForms": ["Hình thức tổ chức gốc..."]
     },
     "equipmentsAndMaterials": {
-      "equipments": ["Thiết bị dạy học..."],
-      "materials": ["Học liệu bổ sung..."]
+      "equipments": ["Giữ nguyên thiết bị giáo viên gốc + bổ sung thiết bị số/tích hợp mới..."],
+      "materials": ["Giữ nguyên học liệu học sinh gốc + bổ sung học liệu mới..."]
     },
     "integratedTopics": [${(selectedTopics || []).map((t: string) => `"${t}"`).join(', ')}],
     "differentiation": {
@@ -624,27 +630,27 @@ Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc s
       {
         "id": "act-1",
         "type": "warmup",
-        "name": "Hoạt động 1: Mở đầu / Khởi động",
-        "duration": "5 phút",
-        "objective": "...",
-        "content": "...",
-        "product": "...",
+        "name": "Hoạt động 1: Giữ nguyên tên hoạt động gốc",
+        "duration": "Thời gian gốc",
+        "objective": "Giữ nguyên mục tiêu hoạt động gốc + chèn điểm tích hợp mới",
+        "content": "Giữ nguyên 100% nội dung gốc + chèn điểm tích hợp mới",
+        "product": "Giữ nguyên 100% sản phẩm gốc + chèn sản phẩm tích hợp mới",
         "implementation": {
-          "transfer": "a) Chuyển giao nhiệm vụ...",
-          "execution": "b) Thực hiện nhiệm vụ...",
-          "reporting": "c) Báo cáo, thảo luận...",
-          "conclusion": "d) Kết luận, nhận định..."
+          "transfer": "GIỮ NGUYÊN VĂN 100% BƯỚC CHUYỂN GIAO NHIỆM VỤ GỐC + chèn thêm [TÍCH HỢP...]",
+          "execution": "GIỮ NGUYÊN VĂN 100% BƯỚC THỰC HIỆN NHIỆM VỤ GỐC + chèn thêm [TÍCH HỢP...]",
+          "reporting": "GIỮ NGUYÊN VĂN 100% BƯỚC BÁO CÁO THẢO LUẬN GỐC + chèn thêm [TÍCH HỢP...]",
+          "conclusion": "GIỮ NGUYÊN VĂN 100% BƯỚC KẾT LUẬN NHẬN ĐỊNH GỐC + chèn thêm [TÍCH HỢP...]"
         },
-        "teacherRole": "...",
-        "studentRole": "...",
-        "promptsAndQuestions": ["..."],
-        "anticipatedSituations": "...",
-        "supportMeasures": "..."
+        "teacherRole": "Lắng nghe, quan sát, hướng dẫn",
+        "studentRole": "Thực hiện nhiệm vụ",
+        "promptsAndQuestions": ["Câu hỏi từ giáo án gốc..."],
+        "anticipatedSituations": "Tình huống dự kiến từ giáo án gốc...",
+        "supportMeasures": "Biện pháp hỗ trợ..."
       }
     ],
     "assessment": {
-      "type": "Hình thức đánh giá...",
-      "details": "Chi tiết...",
+      "type": "Hình thức đánh giá gốc + bổ sung...",
+      "details": "Chi tiết đánh giá...",
       "rubrics": []
     }
   }
