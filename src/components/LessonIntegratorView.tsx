@@ -317,46 +317,38 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
     const lines = text.split('\n');
 
     return (
-      <div className="space-y-2 text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-sans">
+      <div className="space-y-1.5 text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-sans select-text">
         {lines.map((line, idx) => {
           const trimmed = line.trim();
           if (!trimmed) {
             return <div key={idx} className="h-2" />;
           }
 
+          // Check if line is an integration line starting with * or containing *Kỹ năng số:, etc.
+          const isIntegrationLine =
+            /^\s*\*?(Kỹ năng số|Năng lực số|Môi trường|Hướng nghiệp|An toàn giao thông|Giáo dục địa phương|STEM|Tích hợp[^:]*):/i.test(trimmed) ||
+            /^\s*\*+[^*]+\*+/.test(trimmed) ||
+            /\[TÍCH HỢP [^\]]+\]/i.test(trimmed);
+
+          if (isIntegrationLine) {
+            return (
+              <div
+                key={idx}
+                className="my-1.5 p-2.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800/80 text-xs italic font-semibold text-emerald-900 dark:text-emerald-200 flex items-start gap-2 shadow-xs"
+              >
+                <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <span className="whitespace-pre-line">{line}</span>
+              </div>
+            );
+          }
+
           const isHeading1 = /^(BÀI|CHƯƠNG|KẾ HOẠCH BÀI DẠY|GIÁO ÁN|PHẦN|BÀI HỌC|TIẾT)\b/i.test(trimmed) || /^[I|V|X]+\.\s+/i.test(trimmed) || /^#{1,2}\s+/.test(trimmed);
           const isHeading2 = /^(HOẠT ĐỘNG|MỤC TIÊU|THIẾT BỊ|TIẾN TRÌNH|ĐÁNH GIÁ|DẶN DÒ|LUYỆN TẬP|VẬN DỤNG|\d+\.|[a-z]\))\s+/i.test(trimmed) || /^#{3,4}\s+/.test(trimmed);
-
-          // Find [TÍCH HỢP ...] tags
-          const tagRegex = /\[TÍCH HỢP [^\]]+\]/gi;
-          const parts = [];
-          let lastIdx = 0;
-          let match: RegExpExecArray | null;
-
-          while ((match = tagRegex.exec(line)) !== null) {
-            if (match.index > lastIdx) {
-              parts.push(line.substring(lastIdx, match.index));
-            }
-            parts.push(
-              <span
-                key={`tag-${match.index}`}
-                className="inline-flex items-center gap-1.5 font-bold text-emerald-900 dark:text-emerald-100 bg-emerald-100 dark:bg-emerald-950/90 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-700 my-0.5 shadow-xs"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                {match[0]}
-              </span>
-            );
-            lastIdx = tagRegex.lastIndex;
-          }
-
-          if (lastIdx < line.length) {
-            parts.push(line.substring(lastIdx));
-          }
 
           if (isHeading1) {
             return (
               <h2 key={idx} className="text-base font-extrabold text-[#1E3A8A] dark:text-blue-400 pt-4 pb-1 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wide">
-                {parts.length > 0 ? parts : trimmed}
+                {trimmed}
               </h2>
             );
           }
@@ -364,14 +356,14 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
           if (isHeading2) {
             return (
               <h3 key={idx} className="text-sm font-bold text-slate-900 dark:text-slate-100 pt-2 pb-0.5">
-                {parts.length > 0 ? parts : trimmed}
+                {trimmed}
               </h3>
             );
           }
 
           return (
             <p key={idx} className="text-xs text-slate-700 dark:text-slate-300">
-              {parts.length > 0 ? parts : line}
+              {line}
             </p>
           );
         })}
