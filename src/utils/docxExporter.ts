@@ -16,6 +16,86 @@ import { saveAs } from 'file-saver';
 import { FullLessonPlan } from '../types';
 import { convertTextWithMathToDocxRuns, DocxTextRunOptions } from './latexToDocxMath';
 
+export async function exportHtmlToDocx(
+  htmlContent: string,
+  fileName: string = 'Giao_An_Tich_Hop'
+) {
+  const cleanTitle = fileName.replace(/\.[^/.]+$/, '');
+  const fullHtml = `
+    <html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' 
+          xmlns:w='urn:schemas-microsoft-microsoft-com:office:word' 
+          xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset="utf-8">
+      <title>${cleanTitle}</title>
+      <!--[if gte mso 9]>
+      <xml>
+        <w:WordDocument>
+          <w:View>Print</w:View>
+          <w:Zoom>100</w:Zoom>
+          <w:DoNotOptimizeForCustomXSL/>
+        </w:WordDocument>
+      </xml>
+      <![endif]-->
+      <style>
+        @page {
+          size: A4;
+          margin: 20mm 20mm 20mm 20mm;
+        }
+        body {
+          font-family: 'Times New Roman', serif;
+          font-size: 13pt;
+          line-height: 1.25;
+          color: #000000;
+        }
+        table {
+          border-collapse: collapse;
+          width: 100%;
+          margin-top: 8px;
+          margin-bottom: 8px;
+        }
+        th, td {
+          border: 1px solid #000000;
+          padding: 6px 8px;
+          vertical-align: top;
+        }
+        th {
+          background-color: #f8fafc;
+          font-weight: bold;
+          text-align: center;
+        }
+        p {
+          margin-top: 3px;
+          margin-bottom: 3px;
+        }
+        strong {
+          font-weight: bold;
+        }
+        em {
+          font-style: italic;
+        }
+      </style>
+    </head>
+    <body>
+      ${htmlContent}
+    </body>
+    </html>
+  `;
+
+  try {
+    const blob = new Blob(['\ufeff' + fullHtml], {
+      type: 'application/msword;charset=utf-8',
+    });
+    const cleanFileName = fileName.endsWith('.doc') || fileName.endsWith('.docx')
+      ? fileName
+      : `${fileName}.doc`;
+    saveAs(blob, cleanFileName);
+  } catch (err) {
+    console.error('Error exporting HTML to DOC:', err);
+  }
+}
+
+
 export async function exportLessonPlanToDocx(plan: FullLessonPlan) {
   const primaryColor = '1E3A8A'; // Dark Navy Blue
 
