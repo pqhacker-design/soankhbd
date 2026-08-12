@@ -439,11 +439,17 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
     let resultData: any = null;
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s timeout for server
+
       const res = await fetch('/api/propose-lesson-integration', {
         method: 'POST',
         headers: getApiKeyHeaders(currentUser?.id),
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (res.ok) {
         const data = await res.json();
@@ -452,11 +458,12 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
         }
       }
     } catch (err) {
-      console.warn('Server propose route failed, falling back to direct client SDK:', err);
+      console.warn('Server propose route failed or timed out, falling back to direct client SDK:', err);
     }
 
     if (!resultData || !resultData.proposals) {
       try {
+        setProgressStatus('Đang phân tích trực tiếp qua Gemini Client AI SDK...');
         const { proposeLessonIntegrationDirect } = await import('../utils/clientGeminiService');
         resultData = await proposeLessonIntegrationDirect(payload);
       } catch (clientErr: any) {
@@ -559,11 +566,17 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
     let errorMessage = '';
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 40000); // 40s timeout for server call
+
       const res = await fetch('/api/integrate-lesson-plan', {
         method: 'POST',
         headers: getApiKeyHeaders(currentUser?.id),
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (res.ok) {
         const data = await res.json();
@@ -583,13 +596,13 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
         }
       }
     } catch (serverErr) {
-      console.warn('Server integrate-lesson-plan failed, trying client fallback:', serverErr);
+      console.warn('Server integrate-lesson-plan failed or timed out, trying client fallback:', serverErr);
     }
 
     // Direct Client-Side Fallback using @google/genai SDK
     if (!resultData || (!resultData.integratedHtml && !resultData.integratedFullText)) {
       try {
-        setProgressStatus('Đang xử lý trực tiếp qua Gemini Client AI SDK...');
+        setProgressStatus('Máy chủ quá tải, đang xử lý trực tiếp qua Gemini AI SDK...');
         const { integrateLessonPlanDirect } = await import('../utils/clientGeminiService');
         const directResult = await integrateLessonPlanDirect(payload);
         if (directResult && (directResult.integratedHtml || directResult.integratedFullText)) {
@@ -604,8 +617,11 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
     }
 
     if (resultData && (resultData.integratedHtml || resultData.integratedFullText)) {
-      setIntegratedHtml(resultData.integratedHtml || '');
-      setIntegratedFullText(resultData.integratedFullText || '');
+      const finalHtml = resultData.integratedHtml || '';
+      const finalFullText = resultData.integratedFullText || (finalHtml ? finalHtml.replace(/<[^>]+>/g, '\n').replace(/\n+/g, '\n').trim() : uploadedText);
+
+      setIntegratedHtml(finalHtml);
+      setIntegratedFullText(finalFullText);
       setDocumentTitle(resultData.documentTitle || uploadedFileName.replace(/\.[^/.]+$/, '') || 'KHBD_Tich_Hop');
       setIntegrationSummary(resultData.integrationSummary || []);
       setUnsuitableTopics(resultData.unsuitableTopics || []);
