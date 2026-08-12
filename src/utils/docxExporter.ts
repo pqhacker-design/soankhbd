@@ -1057,7 +1057,32 @@ export async function exportPreservedDocumentToDocx(
       continue;
     }
 
-    // Parse [TÍCH HỢP ...] tags inside line
+    // Check if line is an integrated line like *Kỹ năng số: ..., *Môi trường: ..., *STEM: ..., [TÍCH HỢP ...
+    const isIntegrationLine =
+      /^\s*\*?(Kỹ năng số|Năng lực số|Môi trường|Hướng nghiệp|An toàn giao thông|Giáo dục địa phương|STEM|Tích hợp[^:]*):/i.test(trimmed) ||
+      /^\s*\*+[^*]+\*+/.test(trimmed) ||
+      /\[TÍCH HỢP [^\]]+\]/i.test(trimmed);
+
+    if (isIntegrationLine) {
+      docParagraphs.push(
+        new Paragraph({
+          spacing: { before: 40, after: 60, line: 276 },
+          children: [
+            new TextRun({
+              text: trimmed,
+              italics: true,
+              bold: true,
+              font: 'Times New Roman',
+              size: 26, // 13pt
+              color: '0F766E', // Dark Teal green for integration additions
+            }),
+          ],
+        })
+      );
+      continue;
+    }
+
+    // Parse [TÍCH HỢP ...] tags inside line if any
     const runs: (TextRun | Math)[] = [];
     const tagRegex = /\[TÍCH HỢP [^\]]+\]/gi;
     let lastIndex = 0;
