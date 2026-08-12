@@ -12,15 +12,20 @@ import {
   KeyRound,
 } from 'lucide-react';
 
+import { UserProfile } from '../types';
+
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   savedCount: number;
+  currentUser?: UserProfile;
   onOpenApiKeyModal?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, savedCount, onOpenApiKeyModal }) => {
-  const navItems = [
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, savedCount, currentUser, onOpenApiKeyModal }) => {
+  const isAdmin = currentUser?.role === 'Admin' || currentUser?.email?.trim().toLowerCase() === 'pqhacker@gmail.com';
+
+  const allNavItems = [
     {
       id: 'dashboard',
       label: 'Bảng Điều Khiển',
@@ -75,6 +80,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, saved
       badge: null,
     },
   ];
+
+  const navItems = allNavItems.filter((item) => item.id !== 'admin' || isAdmin);
 
   return (
     <aside className="w-full md:w-64 lg:w-72 bg-white dark:bg-[#1E293B] border-r border-slate-200/80 dark:border-slate-800 p-4 flex flex-col justify-between shrink-0 transition-colors">
