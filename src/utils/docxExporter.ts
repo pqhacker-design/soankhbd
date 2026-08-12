@@ -1009,3 +1009,151 @@ export async function exportLessonPlanToDocx(plan: FullLessonPlan) {
   const filename = `Giao_An_${plan.info.lessonTitle.replace(/\s+/g, '_')}_CV5512.docx`;
   saveAs(blob, filename);
 }
+
+export async function exportPreservedDocumentToDocx(
+  fullText: string,
+  documentTitle: string = 'Giáo Án Tích Hợp AI'
+) {
+  const lines = fullText.split('\n');
+  const docParagraphs: Paragraph[] = [];
+
+  // Header banner paragraph in Word document
+  docParagraphs.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 100, after: 120 },
+      children: [
+        new TextRun({
+          text: (documentTitle || 'GIÁO ÁN TÍCH HỢP AI').toUpperCase(),
+          bold: true,
+          size: 28, // 14pt
+          color: '1E3A8A', // Dark navy
+          font: 'Times New Roman',
+        }),
+      ],
+    })
+  );
+
+  docParagraphs.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 0, after: 240 },
+      children: [
+        new TextRun({
+          text: '(Bản giáo án tích hợp AI - Giữ nguyên 100% nội dung & định dạng tài liệu gốc)',
+          italics: true,
+          size: 22, // 11pt
+          color: '475569',
+          font: 'Times New Roman',
+        }),
+      ],
+    })
+  );
+
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim();
+    if (!trimmed) {
+      docParagraphs.push(new Paragraph({ spacing: { after: 100 } }));
+      continue;
+    }
+
+    // Parse [TÍCH HỢP ...] tags inside line
+    const runs: (TextRun | Math)[] = [];
+    const tagRegex = /\[TÍCH HỢP [^\]]+\]/gi;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = tagRegex.exec(rawLine)) !== null) {
+      if (match.index > lastIndex) {
+        const textBefore = rawLine.substring(lastIndex, match.index);
+        runs.push(...convertTextWithMathToDocxRuns(textBefore, { font: 'Times New Roman', size: 26 }));
+      }
+      runs.push(
+        new TextRun({
+          text: match[0],
+          bold: true,
+          font: 'Times New Roman',
+          size: 26, // 13pt
+          color: '0F766E', // Teal green for integration additions
+        })
+      );
+      lastIndex = tagRegex.lastIndex;
+    }
+
+    if (lastIndex < rawLine.length) {
+      const remainingText = rawLine.substring(lastIndex);
+      runs.push(...convertTextWithMathToDocxRuns(remainingText, { font: 'Times New Roman', size: 26 }));
+    }
+
+    // Check heading styles
+    const isMainTitle =
+      /^(BÀI|CHƯƠNG|KẾ HOẠCH BÀI DẠY|GIÁO ÁN|PHẦN|BÀI HỌC|TIẾT)\b/i.test(trimmed) ||
+      /^[I|V|X]+\.\s+/i.test(trimmed) ||
+      /^#{1,2}\s+/.test(trimmed);
+
+    const isSubTitle =
+      /^(HOẠT ĐỘNG|MỤC TIÊU|THIẾT BỊ|TIẾN TRÌNH|ĐÁNH GIÁ|DẶN DÒ|LUYỆN TẬP|VẬN DỤNG|\d+\.|[a-z]\))\s+/i.test(trimmed) ||
+      /^#{3,4}\s+/.test(trimmed);
+
+    const cleanLineText = trimmed.replace(/^#{1,6}\s+/, '');
+
+    if (isMainTitle) {
+      docParagraphs.push(
+        new Paragraph({
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 240, after: 120 },
+          children: runs.length > 0 ? runs : [
+            new TextRun({
+              text: cleanLineText,
+              bold: true,
+              size: 28,
+              color: '1E3A8A',
+              font: 'Times New Roman',
+            })
+          ],
+        })
+      );
+    } else if (isSubTitle) {
+      docParagraphs.push(
+        new Paragraph({
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 180, after: 80 },
+          children: runs.length > 0 ? runs : [
+            new TextRun({
+              text: cleanLineText,
+              bold: true,
+              size: 26,
+              color: '0F172A',
+              font: 'Times New Roman',
+            })
+          ],
+        })
+      );
+    } else {
+      docParagraphs.push(
+        new Paragraph({
+          spacing: { before: 40, after: 80, line: 276 }, // 1.15 line spacing
+          children: runs,
+        })
+      );
+    }
+  }
+
+  const doc = new Document({
+    sections: [
+      {
+        properties: {
+          page: {
+            margin: { top: 1134, bottom: 1134, left: 1417, right: 1134 }, // Standard margins
+          },
+        },
+        children: docParagraphs,
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  const safeFilename = `${(documentTitle || 'Giao_An_Tich_Hop').replace(/[/\\?%*:|"<>]/g, '_')}_TichHop.docx`;
+  saveAs(blob, safeFilename);
+}
+
