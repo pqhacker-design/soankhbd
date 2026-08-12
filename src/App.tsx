@@ -504,6 +504,7 @@ export default function App() {
           {activeTab === 'integrator' && (
             <LessonIntegratorView
               currentUser={currentUser}
+              savedLessonPlans={lessonPlans}
               onPlanGenerated={handlePlanGenerated}
               onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
               onSelectPlanForEdit={(plan) => {
