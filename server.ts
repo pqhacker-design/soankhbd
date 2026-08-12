@@ -32,6 +32,92 @@ function getGeminiClient(req: express.Request): GoogleGenAI {
   });
 }
 
+// Helper to format raw errors into clear, friendly messages
+export function formatGeminiError(err: any): string {
+  if (!err) return 'Lỗi hệ thống Gemini AI. Vui lòng thử lại sau.';
+  let msg = typeof err === 'string' ? err : err.message || '';
+
+  if (!msg && typeof err === 'object') {
+    try {
+      msg = JSON.stringify(err);
+    } catch {
+      msg = '';
+    }
+  }
+
+  if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('high demand') || msg.includes('Spikes in demand')) {
+    return 'Hệ thống AI Gemini hiện đang quá tải tạm thời từ phía Google (Mã lỗi 503). Đã tự động thử lại. Thầy/cô vui lòng bấm lại nút "TỰ ĐỘNG TÍCH HỢP BẰNG AI GEMINI" sau vài giây!';
+  }
+  if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+    return 'Tài khoản Gemini API Key của thầy/cô đã vượt quá hạn mức lưu lượng (Mã 429). Vui lòng đợi 1 phút hoặc kiểm tra lại hạn mức API Key.';
+  }
+  if (msg.includes('MISSING_API_KEY') || msg.includes('API key not valid') || msg.includes('API_KEY_INVALID')) {
+    return 'Mã Gemini API Key cá nhân chưa đúng hoặc chưa được thiết lập. Vui lòng kiểm tra lại trong phần Cấu Hình API Key.';
+  }
+
+  if (msg.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(msg);
+      if (parsed.error?.message) {
+        return formatGeminiError(parsed.error.message);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return msg || 'Lỗi xử lý AI. Vui lòng thử lại sau.';
+}
+
+// Helper to execute Gemini generateContent with automatic retry and model fallback
+async function generateContentWithRetry(
+  ai: GoogleGenAI,
+  params: {
+    model?: string;
+    contents: any;
+    config?: any;
+  },
+  maxRetries = 2
+): Promise<any> {
+  const modelsToTry = [
+    params.model || 'gemini-3.6-flash',
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+  ];
+  const uniqueModels = Array.from(new Set(modelsToTry));
+
+  let lastError: any = null;
+
+  for (const modelName of uniqueModels) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
+        }
+
+        const response = await ai.models.generateContent({
+          ...params,
+          model: modelName,
+        });
+
+        return response;
+      } catch (err: any) {
+        lastError = err;
+        const errStr = typeof err === 'object' ? JSON.stringify(err) : String(err);
+        const errMsg = err.message || errStr;
+
+        if (errMsg.includes('MISSING_API_KEY') || errMsg.includes('API key not valid') || errMsg.includes('API_KEY_INVALID')) {
+          throw new Error(formatGeminiError(err));
+        }
+
+        console.warn(`[Gemini Retry] Model ${modelName} attempt ${attempt + 1} error: ${errMsg.slice(0, 150)}`);
+      }
+    }
+  }
+
+  throw new Error(formatGeminiError(lastError));
+}
+
 // In-memory documents library for demonstration & RAG Q&A
 let documentsLibrary: ReferenceDocument[] = [...DEFAULT_REFERENCE_DOCUMENTS];
 
@@ -127,7 +213,7 @@ HÃY TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON VỚI CẤU TRÚC SAU:
       contents = [promptText];
     }
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: 'gemini-3.6-flash',
       contents: contents,
       config: {
@@ -139,11 +225,12 @@ HÃY TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON VỚI CẤU TRÚC SAU:
     res.json({ success: true, extractedData: cleanAndParseJson(jsonText) });
   } catch (error: any) {
     console.error('Error extracting objectives:', error);
-    const isMissing = error.message?.includes('MISSING_API_KEY');
+    const formattedMsg = formatGeminiError(error);
+    const isMissing = formattedMsg.includes('MISSING_API_KEY') || formattedMsg.includes('API Key');
     res.status(isMissing ? 400 : 500).json({
       success: false,
       apiKeyRequired: isMissing,
-      error: error.message || 'Lỗi khi trích xuất Yêu cầu cần đạt từ tài liệu',
+      error: formattedMsg,
     });
   }
 });
@@ -407,7 +494,7 @@ HÃY TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON ĐÚNG ĐỊNH DẠNG SAU:
     }
     geminiContents.push({ text: prompt });
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: 'gemini-3.6-flash',
       contents: geminiContents.length === 1 ? prompt : geminiContents,
       config: {
@@ -420,11 +507,12 @@ HÃY TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON ĐÚNG ĐỊNH DẠNG SAU:
     res.json({ success: true, lessonPlan: lessonPlanData });
   } catch (error: any) {
     console.error('Error generating lesson plan:', error);
-    const isMissing = error.message?.includes('MISSING_API_KEY');
+    const formattedMsg = formatGeminiError(error);
+    const isMissing = formattedMsg.includes('MISSING_API_KEY') || formattedMsg.includes('API Key');
     res.status(isMissing ? 400 : 500).json({
       success: false,
       apiKeyRequired: isMissing,
-      error: error.message || 'Lỗi khi tạo Kế hoạch bài dạy bằng AI',
+      error: formattedMsg,
     });
   }
 });
@@ -442,7 +530,7 @@ Hãy tạo bộ học liệu bổ trợ chuyên sâu cho bài dạy: "${lessonTi
 Yêu cầu sinh loại học liệu: "${promptType || 'all'}" (gồm Phiếu học tập Worksheet, Bộ câu hỏi Quiz trắc nghiệm củng cố có đáp án + giải thích theo 4 mức độ nhận thức, và Dàn ý Slide PowerPoint bài giảng).
 
 LƯU Ý VỀ CÔNG THỨC TOÁN HỌC / KHOA HỌC:
-- Mọi công thức, phân số, phương trình hoặc ký hiệu toán học phức tạp viết dạng LaTeX kẹp giữa $ (Ví dụ: $x = \frac{-b \pm \sqrt{\Delta}}{2a}$, $a^2 + b^2 = c^2$).
+- Mọi công thức, phân số, phương trình hoặc ký hiệu toán học phức tạp viết dạng LaTeX kẹp giữa $ (Ví dụ: $x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$, $a^2 + b^2 = c^2$).
 - KHÔNG kẹp $ quanh các con số tự nhiên hoặc phép tính thuần túy (viết 25, 37, 63, KHÔNG viết $25$ hay $37$).
 
 Trả về định dạng JSON duy nhất:
@@ -510,7 +598,7 @@ Trả về định dạng JSON duy nhất:
 }
 `;
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: 'gemini-3.6-flash',
       contents: prompt,
       config: {
@@ -522,11 +610,12 @@ Trả về định dạng JSON duy nhất:
     res.json({ success: true, materials: cleanAndParseJson(jsonText) });
   } catch (error: any) {
     console.error('Error generating materials:', error);
-    const isMissing = error.message?.includes('MISSING_API_KEY');
+    const formattedMsg = formatGeminiError(error);
+    const isMissing = formattedMsg.includes('MISSING_API_KEY') || formattedMsg.includes('API Key');
     res.status(isMissing ? 400 : 500).json({
       success: false,
       apiKeyRequired: isMissing,
-      error: error.message || 'Lỗi khi tạo học liệu bổ trợ',
+      error: formattedMsg,
     });
   }
 });
@@ -598,7 +687,7 @@ Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc s
 }
 `;
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: 'gemini-3.6-flash',
       contents: prompt,
       config: {
@@ -611,11 +700,12 @@ Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc s
     res.json({ success: true, ...result });
   } catch (error: any) {
     console.error('Error integrating lesson plan:', error);
-    const isMissing = error.message?.includes('MISSING_API_KEY');
+    const formattedMsg = formatGeminiError(error);
+    const isMissing = formattedMsg.includes('MISSING_API_KEY') || formattedMsg.includes('API Key');
     res.status(isMissing ? 400 : 500).json({
       success: false,
       apiKeyRequired: isMissing,
-      error: error.message || 'Lỗi khi tự động tích hợp giáo án bằng AI',
+      error: formattedMsg,
     });
   }
 });
@@ -656,7 +746,7 @@ Hãy trả về duy nhất đối tượng JSON Hoạt động dạy học mới
 }
 `;
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: 'gemini-3.6-flash',
       contents: prompt,
       config: { responseMimeType: 'application/json' },
@@ -666,11 +756,12 @@ Hãy trả về duy nhất đối tượng JSON Hoạt động dạy học mới
     res.json({ success: true, activity: cleanAndParseJson(jsonText) });
   } catch (error: any) {
     console.error('Error refining activity:', error);
-    const isMissing = error.message?.includes('MISSING_API_KEY');
+    const formattedMsg = formatGeminiError(error);
+    const isMissing = formattedMsg.includes('MISSING_API_KEY') || formattedMsg.includes('API Key');
     res.status(isMissing ? 400 : 500).json({
       success: false,
       apiKeyRequired: isMissing,
-      error: error.message || 'Lỗi khi tinh chỉnh hoạt động',
+      error: formattedMsg,
     });
   }
 });
@@ -698,7 +789,7 @@ Câu hỏi mới của giáo viên: "${query}"
 Hãy trả lời bằng tiếng Việt văn minh, mạch lạc, dễ hiểu, dẫn chứng rõ điều/khoản/công văn có liên quan và đưa ra lời khuyên thực tiễn giúp giáo viên ứng dụng tốt nhất.
 `;
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: 'gemini-3.6-flash',
       contents: prompt,
     });
@@ -706,11 +797,12 @@ Hãy trả lời bằng tiếng Việt văn minh, mạch lạc, dễ hiểu, d�
     res.json({ success: true, answer: response.text });
   } catch (error: any) {
     console.error('Error in chat-reference:', error);
-    const isMissing = error.message?.includes('MISSING_API_KEY');
+    const formattedMsg = formatGeminiError(error);
+    const isMissing = formattedMsg.includes('MISSING_API_KEY') || formattedMsg.includes('API Key');
     res.status(isMissing ? 400 : 500).json({
       success: false,
       apiKeyRequired: isMissing,
-      error: error.message || 'Lỗi khi hỏi đáp AI',
+      error: formattedMsg,
     });
   }
 });
