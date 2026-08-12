@@ -660,16 +660,25 @@ QUY TẮC BẮT BUỘC (PRESERVE -> ANALYZE -> LOCATE -> GENERATE -> INSERT -> V
    - KHÔNG ĐƯỢC làm thay đổi, sửa, xóa, viết lại, tóm tắt hoặc định dạng lại bất kỳ từ ngữ, câu chữ, tiêu đề, mục, bảng biểu hay số thứ tự nào của KHBD gốc.
    - Giữ nguyên 100% cấu trúc bảng (1 cột, 2 cột...), thứ tự các bước và dữ liệu ban đầu.
 
-2. **CHỈ THỰC HIỆN THAO TÁC INSERT (CHÈN THÊM TRỰC TIẾP TẠI VỊ TRÍ NỘI DUNG/HOẠT ĐỘNG PHÙ HỢP)**:
-   - **CHÈN TẠI CHỖ (IN-PLACE INSERTION)**: Nội dung tích hợp thuộc hoạt động nào BẮT BUỘC phải nằm ngay bên trong/sau hoạt động đó trong thân bài dạy (Ví dụ: Chèn ngay bên trong Hoạt động 1: Khởi động, Hoạt động 2: Khám phá, Hoạt động 3: Luyện tập, hoặc ở Bước b/c của nhiệm vụ học tập).
-   - **TUYỆT ĐỐI KHÔNG DỒN XUỐNG CUỐI GIÁO ÁN**: KHÔNG ĐƯỢC gom tất cả nội dung tích hợp để dồn xuống cuối giáo án hay tạo thành một mục tích hợp riêng ở cuối bài. Phải đan xen trực tiếp vào đúng vị trí tiến trình dạy học đang diễn ra.
+2. **CHỈ THỰC HIỆN THAO TÁC INSERT (CHÈN TRỰC TIẾP TRONG Ô BẢNG VÀ TẠI NỘI DUNG HOẠT ĐỘNG PHÙ HỢP)**:
+   - **CHÈN TẠI CHỖ NẰM TRONG Ô BẢNG (IN-CELL / IN-PLACE INSERTION)**:
+     Nội dung tích hợp thuộc hoạt động nào BẮT BUỘC phải nằm ngay bên trong ô bảng (thẻ td) của hoạt động đó, nằm ngay sau bước thực hiện (như sau mục a) Chuyển giao nhiệm vụ, hoặc sau d) Kết luận, nhận định...).
+   - **CẤU TRÚC CHÈN TRONG Ô BẢNG VÍ DỤ (MÔ PHỎNG CHÍNH XÁC YÊU CẦU)**:
+     &lt;td&gt;
+       &lt;p&gt;&lt;strong&gt;1. Chuyển giao nhiệm vụ:&lt;/strong&gt;&lt;/p&gt;
+       &lt;p&gt;a) Chuyển giao nhiệm vụ: GV chia lớp thành 4 nhóm...&lt;/p&gt;
+       &lt;p style="color: #0f766e; background-color: #f0fdf4; border-left: 3px solid #10b981; padding: 6px 10px; margin: 6px 0; font-weight: 600;"&gt;
+         &lt;strong&gt;[TÍCH HỢP KỸ NĂNG SỐ &amp; CÔNG DÂN SỐ]&lt;/strong&gt; Sau khi chuyển giao nhiệm vụ, GV nhấn mạnh: 'Khi nghiên cứu...'
+       &lt;/p&gt;
+     &lt;/td&gt;
+   - **TUYỆT ĐỐI KHÔNG DỒN XUỐNG CUỐI BẢNG HOẶC CUỐI GIÁO ÁN**: KHÔNG ĐƯỢC gom tất cả nội dung tích hợp để dồn xuống cuối giáo án hay tạo thành một mục tích hợp riêng ở cuối bài hay ngoài bảng. Phải đan xen trực tiếp vào đúng ô td của tiến trình dạy học đang diễn ra.
    - Các chủ đề tích hợp yêu cầu: [${topicList}].
    - Yêu cầu tích hợp cụ thể từ giáo viên: "${integrationRequirements || customInstructions || 'Tích hợp nhẹ nhàng, tự nhiên vào các hoạt động dạy học phù hợp'}".
    - Tất cả nội dung chèn thêm BẮT BUỘC phải có nhãn nhận diện rõ ràng theo cú pháp:
      <p style="color: #0f766e; background-color: #f0fdf4; border-left: 3px solid #10b981; padding: 6px 10px; margin: 6px 0; font-weight: 600;">
        <strong>[TÍCH HỢP TÊN_CHỦ_ĐỀ]</strong> Nội dung tích hợp chèn thêm...
      </p>
-     Ví dụ: [TÍCH HỢP AN TOÀN GIAO THÔNG], [TÍCH HỢP BẢO VỆ MÔI TRƯỜNG], [TÍCH HỢP KỸ NĂNG SỐ], [TÍCH HỢP HƯỚNG NGHIỆP], [TÍCH HỢP GIÁO DỤC PHÁP LUẬT], [TÍCH HỢP STEM], v.v.
+     Ví dụ: [TÍCH HỢP AN TOÀN GIAO THÔNG], [TÍCH HỢP BẢO VỆ MÔI TRƯỜNG], [TÍCH HỢP KỸ NĂNG SỐ & CÔNG DÂN SỐ], [TÍCH HỢP GIÁO DỤC HƯỚNG NGHIỆP], [TÍCH HỢP STEM], v.v.
 
 3. **KHÔNG TÍCH HỢP GƯỢNG ÉP**:
    - Nếu chủ đề tích hợp nào KHÔNG phù hợp với ngữ cảnh bài học, KHÔNG được gượng ép chèn bừa bãi.
