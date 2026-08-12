@@ -11,6 +11,90 @@ export function getClientGemini(customKey?: string): GoogleGenAI {
   return new GoogleGenAI({ apiKey });
 }
 
+export function formatGeminiError(err: any): string {
+  if (!err) return 'Lỗi hệ thống Gemini AI. Vui lòng thử lại sau.';
+  let msg = typeof err === 'string' ? err : err.message || '';
+
+  if (!msg && typeof err === 'object') {
+    try {
+      msg = JSON.stringify(err);
+    } catch {
+      msg = '';
+    }
+  }
+
+  if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('high demand') || msg.includes('Spikes in demand')) {
+    return 'Hệ thống AI Gemini hiện đang quá tải tạm thời từ phía Google (Mã lỗi 503). Đã tự động thử lại. Thầy/cô vui lòng bấm thử lại sau vài giây!';
+  }
+  if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+    return 'Tài khoản Gemini API Key của thầy/cô đã vượt quá hạn mức lưu lượng (Mã 429). Vui lòng đợi 1 phút hoặc kiểm tra lại hạn mức API Key.';
+  }
+  if (msg.includes('MISSING_API_KEY') || msg.includes('API key not valid') || msg.includes('API_KEY_INVALID')) {
+    return 'Mã Gemini API Key cá nhân chưa đúng hoặc chưa được thiết lập. Vui lòng kiểm tra lại trong phần Cấu Hình API Key.';
+  }
+
+  if (msg.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(msg);
+      if (parsed.error?.message) {
+        return formatGeminiError(parsed.error.message);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return msg || 'Lỗi xử lý AI. Vui lòng thử lại sau.';
+}
+
+export async function generateContentWithRetryDirect(
+  ai: GoogleGenAI,
+  params: {
+    model?: string;
+    contents: any;
+    config?: any;
+  },
+  maxRetries = 2
+): Promise<any> {
+  const modelsToTry = [
+    params.model || 'gemini-3.6-flash',
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+  ];
+  const uniqueModels = Array.from(new Set(modelsToTry));
+
+  let lastError: any = null;
+
+  for (const modelName of uniqueModels) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
+        }
+
+        const response = await ai.models.generateContent({
+          ...params,
+          model: modelName,
+        });
+
+        return response;
+      } catch (err: any) {
+        lastError = err;
+        const errStr = typeof err === 'object' ? JSON.stringify(err) : String(err);
+        const errMsg = err.message || errStr;
+
+        if (errMsg.includes('MISSING_API_KEY') || errMsg.includes('API key not valid') || errMsg.includes('API_KEY_INVALID')) {
+          throw new Error(formatGeminiError(err));
+        }
+
+        console.warn(`[Client Gemini Retry] Model ${modelName} attempt ${attempt + 1} error: ${errMsg.slice(0, 150)}`);
+      }
+    }
+  }
+
+  throw new Error(formatGeminiError(lastError));
+}
+
 export async function validateApiKeyDirect(apiKey: string): Promise<boolean> {
   const cleanKey = apiKey.trim();
   if (!cleanKey) return false;
@@ -461,7 +545,7 @@ Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc s
 }
 `;
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetryDirect(ai, {
     model: 'gemini-3.6-flash',
     contents: prompt,
     config: {
