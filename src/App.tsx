@@ -496,6 +496,7 @@ export default function App() {
             <PlannerWizard
               currentUser={currentUser}
               onPlanGenerated={handlePlanGenerated}
+              onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
             />
           )}
 
