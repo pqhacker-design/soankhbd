@@ -531,6 +531,148 @@ Trả về định dạng JSON duy nhất:
   }
 });
 
+// API: Auto-integrate topics (Digital Competencies, Environment, Career, Traffic Safety, Local Education) into Uploaded Lesson Plan
+app.post('/api/integrate-lesson-plan', async (req, res) => {
+  try {
+    const ai = getGeminiClient(req);
+    const {
+      uploadedText,
+      selectedTopics,
+      customInstructions,
+      schoolName,
+      teacherName,
+    } = req.body;
+
+    const topicList = (selectedTopics && selectedTopics.length > 0)
+      ? selectedTopics.join(', ')
+      : 'Năng lực số, Bảo vệ Môi trường, Giáo dục Hướng nghiệp, An toàn giao thông, Giáo dục địa phương';
+
+    const prompt = `
+Bạn là Chuyên gia Cao cấp về Chuẩn hóa và Tích hợp Giáo dục Phổ thông GDPT 2018 Việt Nam (Công văn 5512/BGDĐT đối với THCS/THPT, Công văn 3535 đối với Tiểu học).
+Dưới đây là NỘI DUNG GIÁO ÁN SẴN CÓ do giáo viên tải lên:
+================================================================================
+${uploadedText}
+================================================================================
+
+NHIỆM VỤ CỦA BẠN:
+1. Đọc và giữ nguyên 100% kiến thức chuyên môn, cấu trúc bài dạy và khung bài dạy gốc của giáo án tải lên.
+2. Tự động Phân tích và BỔ SUNG CÁC ĐIỂM TÍCH HỢP CHUYÊN SÂU theo đúng danh sách các chủ đề được chọn: [${topicList}].
+   - **Tích hợp Năng lực số**: Ghép nối việc sử dụng phần mềm, khai thác học liệu số, ứng dụng CNTT, an toàn không gian mạng.
+   - **Tích hợp Môi trường & Biến đổi khí hậu**: Liên hệ tiết kiệm năng lượng, bảo vệ cảnh quan, phân loại rác, tác động môi trường.
+   - **Tích hợp Hướng nghiệp**: Liên hệ định hướng ứng dụng nghề nghiệp tương lai, vị trí công việc thực tế trong xã hội.
+   - **Tích hợp An toàn giao thông**: Tình huống chấp hành luật giao thông, văn hóa giao thông an toàn liên hệ từ kiến thức bài học.
+   - **Tích hợp Giáo dục địa phương**: Liên hệ thực tiễn lịch sử, danh lam thắng cảnh, văn hóa di sản, sản vật, kinh tế xã hội địa phương.
+3. Chèn rõ ràng các điểm tích hợp mới vào:
+   - Phần Mục tiêu (I. Objectives) -> Yêu cầu cần đạt, Năng lực chung, Năng lực đặc thù.
+   - Phần Thiết bị & Học liệu (II. Equipment & Materials).
+   - Tiến trình Dạy học (III. Activities - 4 bước) -> Đánh dấu bằng các nhãn nổi bật như: [TÍCH HỢP NĂNG LỰC SỐ], [TÍCH HỢP MÔI TRƯỜNG], [TÍCH HỢP HƯỚNG NGHIỆP], [TÍCH HỢP AN TOÀN GIAO THÔNG], [TÍCH HỢP GIÁO DỤC ĐỊA PHƯƠNG].
+   - Phần Đánh giá & Phân hóa (IV. Assessment & Differentiation).
+
+Yêu cầu bổ sung từ giáo viên: ${customInstructions || 'Không có.'}
+
+Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc sau:
+{
+  "integrationSummary": [
+    "Tóm tắt điểm tích hợp Năng lực số đã thêm...",
+    "Tóm tắt điểm tích hợp Môi trường đã thêm...",
+    "Tóm tắt điểm tích hợp Hướng nghiệp đã thêm...",
+    "Tóm tắt điểm tích hợp An toàn giao thông đã thêm...",
+    "Tóm tắt điểm tích hợp Giáo dục địa phương đã thêm..."
+  ],
+  "lessonPlan": {
+    "id": "lp-integrated-${Date.now()}",
+    "createdAt": "${new Date().toISOString()}",
+    "updatedAt": "${new Date().toISOString()}",
+    "level": "THCS",
+    "subject": "Tên môn học từ giáo án",
+    "grade": "Lớp học từ giáo án",
+    "textbook": "Bộ sách từ giáo án",
+    "info": {
+      "lessonTitle": "Tên bài dạy từ giáo án gốc",
+      "topic": "Chủ đề / Chương",
+      "periodNumber": "Tiết 1",
+      "duration": "45 phút",
+      "date": "${new Date().toISOString().split('T')[0]}",
+      "classGroup": "Lớp học",
+      "schoolName": "${schoolName || 'Trường THCS/THPT'}",
+      "teacherName": "${teacherName || 'Giáo viên bộ môn'}",
+      "departmentName": "Tổ chuyên môn"
+    },
+    "objectives": {
+      "qualities": ["Phẩm chất..."],
+      "generalCompetencies": ["Năng lực chung..."],
+      "specificCompetencies": ["Năng lực đặc thù..."],
+      "requirementsToAchieve": ["Yêu cầu cần đạt đã bổ sung điểm tích hợp..."]
+    },
+    "methodologies": {
+      "methods": ["Phương pháp dạy học..."],
+      "techniques": ["Kỹ thuật dạy học..."],
+      "organizationForms": ["Hình thức tổ chức..."]
+    },
+    "equipmentsAndMaterials": {
+      "equipments": ["Thiết bị dạy học..."],
+      "materials": ["Học liệu bổ sung..."]
+    },
+    "integratedTopics": [${(selectedTopics || []).map((t: string) => `"${t}"`).join(', ')}],
+    "differentiation": {
+      "weakSupport": "Hỗ trợ học sinh cần hỗ trợ...",
+      "averageSupport": "Học sinh trung bình...",
+      "advancedSupport": "Học sinh khá...",
+      "giftedSupport": "Học sinh giỏi/năng khiếu..."
+    },
+    "activities": [
+      {
+        "id": "act-1",
+        "type": "warmup",
+        "name": "Hoạt động 1: Mở đầu / Khởi động",
+        "duration": "5 phút",
+        "objective": "...",
+        "content": "...",
+        "product": "...",
+        "implementation": {
+          "transfer": "a) Chuyển giao nhiệm vụ...",
+          "execution": "b) Thực hiện nhiệm vụ...",
+          "reporting": "c) Báo cáo, thảo luận...",
+          "conclusion": "d) Kết luận, nhận định..."
+        },
+        "teacherRole": "...",
+        "studentRole": "...",
+        "promptsAndQuestions": ["..."],
+        "anticipatedSituations": "...",
+        "supportMeasures": "..."
+      }
+    ],
+    "assessment": {
+      "type": "Hình thức đánh giá...",
+      "details": "Chi tiết...",
+      "rubrics": []
+    }
+  }
+}
+`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.6-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+      },
+    });
+
+    const jsonText = response.text || '{}';
+    const result = cleanAndParseJson(jsonText);
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    console.error('Error integrating lesson plan:', error);
+    const isMissing = error.message?.includes('MISSING_API_KEY');
+    res.status(isMissing ? 400 : 500).json({
+      success: false,
+      apiKeyRequired: isMissing,
+      error: error.message || 'Lỗi khi tự động tích hợp giáo án bằng AI',
+    });
+  }
+});
+
 // API: Refine Specific Activity with AI
 app.post('/api/refine-activity', async (req, res) => {
   try {

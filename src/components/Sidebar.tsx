@@ -10,6 +10,7 @@ import {
   FileCheck2,
   Sparkles,
   KeyRound,
+  Layers,
 } from 'lucide-react';
 
 import { UserProfile } from '../types';
@@ -40,6 +41,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, saved
       icon: Wand2,
       badge: 'AI 3.6',
       badgeColor: 'bg-[#6C63FF]/10 text-[#6C63FF] dark:bg-[#6C63FF]/20 dark:text-indigo-300',
+      highlight: true,
+    },
+    {
+      id: 'integrator',
+      label: 'Tích Hợp Giáo Án',
+      desc: 'Nâng cấp giáo án sẵn có',
+      icon: Layers,
+      badge: 'Mới',
+      badgeColor: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
       highlight: true,
     },
     {

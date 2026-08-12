@@ -3,6 +3,7 @@ import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { DashboardView } from './components/DashboardView';
 import { PlannerWizard } from './components/PlannerWizard';
+import { LessonIntegratorView } from './components/LessonIntegratorView';
 import { LessonPlanEditorView } from './components/LessonPlanEditorView';
 import { LessonPlansLibraryView } from './components/LessonPlansLibraryView';
 import { MaterialsBankView } from './components/MaterialsBankView';
@@ -497,6 +498,18 @@ export default function App() {
               currentUser={currentUser}
               onPlanGenerated={handlePlanGenerated}
               onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+            />
+          )}
+
+          {activeTab === 'integrator' && (
+            <LessonIntegratorView
+              currentUser={currentUser}
+              onPlanGenerated={handlePlanGenerated}
+              onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+              onSelectPlanForEdit={(plan) => {
+                setSelectedPlan(plan);
+                setActiveTab('editor');
+              }}
             />
           )}
 
