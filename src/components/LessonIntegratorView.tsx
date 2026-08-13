@@ -38,6 +38,7 @@ import {
 import mammoth from 'mammoth';
 import { FullLessonPlan, UserProfile } from '../types';
 import { exportLessonPlanToDocx, exportPreservedDocumentToDocx, exportHtmlToDocx } from '../utils/docxExporter';
+import { insertProposalIntoHtml, insertMultipleProposalsIntoHtml } from '../utils/htmlInserter';
 import { getUserApiKey, getApiKeyHeaders } from '../utils/apiHelper';
 import { useToast } from '../context/ToastContext';
 
@@ -53,6 +54,7 @@ export interface IntegrationProposal {
   id: string;
   locationName: string;
   topicTag: string;
+  targetAnchorText?: string;
   reason: string;
   proposedInsertText: string;
   status: 'pending' | 'accepted' | 'rejected';
@@ -477,6 +479,7 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
         id: p.id || `prop-${idx}`,
         locationName: p.locationName || `Vị trí đề xuất ${idx + 1}`,
         topicTag: p.topicTag || '[TÍCH HỢP]',
+        targetAnchorText: p.targetAnchorText || p.targetAnchor || '',
         reason: p.reason || 'Sự kiện trong hoạt động học phù hợp để mở rộng liên hệ.',
         proposedInsertText: p.proposedInsertText || 'Nội dung tích hợp bổ sung.',
         status: 'pending',
@@ -507,12 +510,8 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
     const summaryItems: string[] = [];
 
     acceptedList.forEach((prop) => {
-      const badgeHtml = `<p style="color: #0f766e; background-color: #f0fdf4; border-left: 3px solid #10b981; padding: 6px 10px; margin: 6px 0; font-weight: 600;">
-        <strong>${prop.topicTag}</strong> ${prop.proposedInsertText}
-      </p>`;
-
-      // Insert into target location
-      updatedHtml += `\n${badgeHtml}`;
+      // In-cell/In-place insertion using targetAnchorText or locationName
+      updatedHtml = insertProposalIntoHtml(updatedHtml, prop);
       summaryItems.push(`${prop.topicTag} - Đã chèn vào ${prop.locationName}`);
     });
 
@@ -616,8 +615,18 @@ export const LessonIntegratorView: React.FC<LessonIntegratorViewProps> = ({
       }
     }
 
-    if (resultData && (resultData.integratedHtml || resultData.integratedFullText)) {
-      const finalHtml = resultData.integratedHtml || '';
+    if (resultData && (resultData.integratedHtml || resultData.integratedFullText || resultData.insertions || resultData.proposals)) {
+      const sourceHtml = uploadedHtml || uploadedText.split('\n').map((line) => `<p>${line}</p>`).join('');
+      let finalHtml = '';
+
+      if (resultData.insertions && Array.isArray(resultData.insertions) && resultData.insertions.length > 0) {
+        finalHtml = insertMultipleProposalsIntoHtml(sourceHtml, resultData.insertions);
+      } else if (resultData.proposals && Array.isArray(resultData.proposals) && resultData.proposals.length > 0) {
+        finalHtml = insertMultipleProposalsIntoHtml(sourceHtml, resultData.proposals);
+      } else {
+        finalHtml = resultData.integratedHtml || sourceHtml;
+      }
+
       const finalFullText = resultData.integratedFullText || (finalHtml ? finalHtml.replace(/<[^>]+>/g, '\n').replace(/\n+/g, '\n').trim() : uploadedText);
 
       setIntegratedHtml(finalHtml);
