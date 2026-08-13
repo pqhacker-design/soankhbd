@@ -691,6 +691,14 @@ Trả về duy nhất một đối tượng JSON chuẩn xác theo cấu trúc:
     "Tóm tắt 1: [TÍCH HỢP AN TOÀN GIAO THÔNG] Đã chèn vào Hoạt động Khởi động...",
     "Tóm tắt 2: [TÍCH HỢP KỸ NĂNG SỐ] Đã chèn vào Hoạt động Luyện tập..."
   ],
+  "insertions": [
+    {
+      "locationName": "Hoạt động 2: Khám phá kiến thức - Mục 1. Chuyển giao nhiệm vụ",
+      "targetAnchorText": "dùng GeoGebra vẽ trục số",
+      "topicTag": "[TÍCH HỢP KỸ NĂNG SỐ & CÔNG DÂN SỐ]",
+      "proposedInsertText": "GV nhấn mạnh: 'Khi nghiên cứu thông tin trên Internet, các em cần chú ý sử dụng nguồn tin cậy...'"
+    }
+  ],
   "unsuitableTopics": [
     { "topic": "Tên chủ đề chưa phù hợp", "reason": "Lý do chưa phù hợp", "suggestion": "Đề xuất gợi ý" }
   ],
@@ -775,6 +783,7 @@ Trả về duy nhất đối tượng JSON chuẩn:
       "id": "prop-1",
       "locationName": "Hoạt động 2: Khám phá kiến thức - Trạm 1",
       "topicTag": "[TÍCH HỢP KỸ NĂNG SỐ]",
+      "targetAnchorText": "tra cứu thông tin về số liệu",
       "reason": "Hoạt động đang yêu cầu học sinh làm việc với số liệu, phù hợp để hướng dẫn học sinh thao tác phần mềm tra cứu trực tuyến.",
       "proposedInsertText": "GV đặt câu hỏi mở rộng: Hướng dẫn HS sử dụng thiết bị số để tra cứu thông tin chính thống về chủ đề.",
       "status": "pending"
@@ -783,6 +792,7 @@ Trả về duy nhất đối tượng JSON chuẩn:
       "id": "prop-2",
       "locationName": "Hoạt động 4: Vận dụng",
       "topicTag": "[TÍCH HỢP BẢO VỆ MÔI TRƯỜNG]",
+      "targetAnchorText": "d) Kết luận, nhận định:",
       "reason": "Hoạt động vận dụng yêu cầu giải quyết bài toán thực tế, rất thích hợp để lồng ghép hành động bảo vệ môi trường.",
       "proposedInsertText": "GV giao nhiệm vụ liên hệ: Hãy đề xuất 2 giải pháp giảm thiểu chất thải nhựa trong gia đình em.",
       "status": "pending"
