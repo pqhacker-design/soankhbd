@@ -41,7 +41,7 @@ function parseParagraphElementToDocx(el: HTMLElement, isListItem: boolean = fals
     styleAttr.includes('background-color') ||
     (el.textContent && el.textContent.includes('[TÍCH HỢP'));
 
-  function traverseInline(node: Node, currentStyles: { bold?: boolean; italic?: boolean; color?: string }) {
+  function traverseInline(node: Node, currentStyles: { bold?: boolean; italics?: boolean; color?: string }) {
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent || '';
       if (text) {
@@ -51,7 +51,7 @@ function parseParagraphElementToDocx(el: HTMLElement, isListItem: boolean = fals
             font: 'Times New Roman',
             size: 26, // 13pt
             bold: currentStyles.bold,
-            italic: currentStyles.italic,
+            italics: currentStyles.italics,
             color: currentStyles.color || (isIntegratedBlock ? '0F766E' : '000000'),
           })
         );
@@ -72,7 +72,7 @@ function parseParagraphElementToDocx(el: HTMLElement, isListItem: boolean = fals
         newStyles.bold = true;
       }
       if (tag === 'EM' || tag === 'I' || style.includes('font-style: italic')) {
-        newStyles.italic = true;
+        newStyles.italics = true;
       }
 
       const colorMatch = style.match(/color:\s*([^;]+)/i);
@@ -154,7 +154,7 @@ function parseTableElementToDocx(tableEl: HTMLElement): Table {
             left: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
             right: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
           },
-          padding: { top: 100, bottom: 100, left: 150, right: 150 },
+          margins: { top: 100, bottom: 100, left: 150, right: 150 },
         })
       );
     }
